@@ -5,6 +5,8 @@ larghezzaGriglia = 0.45
 dist = 0.01         # distanza celle
 
 griglia = {}        # dizionario vuoto
+j = 0
+i = 0
 for j in range(int(lunghezzaGriglia * 100) + 1):
     for i in range(int(larghezzaGriglia * 100) + 1):  # i parte da 0
         chiave = f"cella[{i},{j}]"
