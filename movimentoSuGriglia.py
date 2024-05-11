@@ -7,7 +7,7 @@ import json
 pi = math.pi
 incremento = 0.1
 t0 = 0
-t1 = 1      # durata movimento da un punto della griglia all'altro
+t1 = 2      # durata movimento da un punto della griglia all'altro
 T = t1 - t0
 lunghezzaGriglia = 0.3
 larghezzaGriglia = 0.4
@@ -24,7 +24,6 @@ d = mujoco.MjData(m)
 
 timeStep = m.opt.timestep       # mujoco simulation timestep
 pos0 = np.array(d.mocap_pos[1])         # posa iniziale mocap body
-# pos0 = griglia[f"cella_{i}_{j}"]
 nextPose = griglia[f"cella_{i}_{j}"]
 
 with mujoco.viewer.launch_passive(m, d) as viewer:
@@ -37,7 +36,7 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
     #         MOCAP POS = POINT
     #         STEP
 
-    while viewer.is_running() and i != larghezzaGriglia * 100 and j != lunghezzaGriglia * 100 :
+    while viewer.is_running() and i <= larghezzaGriglia * 100 and j <= lunghezzaGriglia * 100 :
 
         t = 0
         # allineamento con la griglia
