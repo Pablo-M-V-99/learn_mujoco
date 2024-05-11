@@ -10,6 +10,8 @@ rad_to_deg = 180 / pi
 incremento = 0.1
 alfa = 0
 VIEWER = True
+lunghezzaGriglia = 0.3
+larghezzaGriglia = 0.45
 
 def sin(alfa):
     return math.sin(alfa*deg_to_rad)
@@ -17,7 +19,7 @@ def sin(alfa):
 def cos(alfa):
     return math.cos(alfa*deg_to_rad)
 
-json_path = "/home/pablo/PycharmProjects/learn_mujoco/griglia_45x30.json"
+json_path = "/home/pablo/PycharmProjects/learn_mujoco/griglia_40x30.json"
 with open(json_path, "r") as file:
     griglia = json.load(file)
 
@@ -26,7 +28,9 @@ xml_path = "/home/pablo/PycharmProjects/mujoco/model/plugin/elasticity/muoviBand
 m = mujoco.MjModel.from_xml_path(xml_path)
 d = mujoco.MjData(m)
 
-pos0 = np.array(d.mocap_pos[1])
+pos0 = np.array(d.mocap_pos[1])         # posa iniziale mocap body
+offset = d.mocap_pos[5]
+next_pos = griglia[f"cella_{0}_{0}"]
 
 with mujoco.viewer.launch_passive(m, d) as viewer:
 
@@ -48,7 +52,8 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
 
         if alfa <= 90 and alfa >= -90 :     # velocità nulla all'inversione
             alfa += incremento
-            d.mocap_pos[1] = pos + np.array([0, 0, 0.5*sin(alfa)])
+            d.mocap_pos[1] = pos0 + np.array([0, 0, 0.5*sin(alfa)])
+            print(d.mocap_pos[1][0])
         else:
             incremento = -incremento
             alfa += incremento
