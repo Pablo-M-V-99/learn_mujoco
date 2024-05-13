@@ -5,9 +5,10 @@ import math
 import json
 
 pi = math.pi
-incremento = 0.1
+
+# PARAMETRI
 t0 = 0
-t1 = 2      # durata movimento da un punto della griglia all'altro
+t1 = 5      # durata movimento da un punto della griglia all'altro
 T = t1 - t0
 lunghezzaGriglia = 0.3
 larghezzaGriglia = 0.4
@@ -145,7 +146,7 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             i -= 1
 
         # Rudimentary time keeping, will drift relative to wall clock.
-        time_until_next_step = m.opt.timestep - (time.time() - t0)
+        time_until_next_step = m.opt.timestep - (time.time() - start)
 
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)
