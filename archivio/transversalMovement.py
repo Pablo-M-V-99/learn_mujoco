@@ -1,3 +1,4 @@
+
 import time
 import mujoco.viewer
 import numpy as np
@@ -43,7 +44,7 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
         # MOVIMENTO SU GRIGLIA TRASVERSALE
 
         t = 0
-        # allineamento con la griglia
+        # Allineamento con la griglia
         while t <= 25 and i == 0 and j == 0 and k == 0:
             x = scriptTraiettoria.move(pos0[0], nextPose[0], t, t0, 25)
             y = scriptTraiettoria.move(pos0[1], nextPose[1], t, t0, 25)

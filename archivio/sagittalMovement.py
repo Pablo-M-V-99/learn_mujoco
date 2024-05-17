@@ -13,7 +13,7 @@ len_G = 0.3     # lunghezza griglia
 wid_G = 0.4     # larghezza griglia
 height_G = 0.4  # altezza griglia
 dimCell = 0.01  # dimensiona cella
-offX, offY, offZ = 0, 0.45, 0     # offset per l'allineamento della griglia
+offX, offY, offZ = -0.2, 0.45, 0.2     # offset per l'allineamento della griglia
 i, j, k = 0, 0, 0     # coordinate cella
 
 scriptGriglia.creazioneGriglia(len_G, wid_G, height_G, dimCell, offX, offY, offZ)

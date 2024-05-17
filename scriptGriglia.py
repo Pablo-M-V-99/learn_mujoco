@@ -1,8 +1,6 @@
 import json
 
-
 def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimCella, offX, offY, offZ):
-
     i = 0
     j = 0
     k = 0
@@ -20,6 +18,19 @@ def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimCel
     with open(percorso_file, "w") as file:
         json.dump(griglia, file, indent=2)
 
+def creazioneGrigliaRadiale():
+
+    grigliaRad = {}
+
+    for i in range(-180, 180+1, 1):
+        chiave = f"rot_{i}"
+        valore = i
+        grigliaRad[chiave] = valore
+
+    percorso_file = f"grigliaRadiale.json"
+
+    with open(percorso_file, "w") as file:
+        json.dump(grigliaRad, file, indent=2)
 
 if __name__ == "__main__":
     print("Questo script non deve essere eseguito autonomamente. Usalo fornendogli in input la lunghezza della griglia,"
