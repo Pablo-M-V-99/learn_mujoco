@@ -11,17 +11,18 @@ from scriptTraiettoria import move
 t0 = 0          # tempo iniziale
 t1 = 5          # durata movimento da un punto della griglia all'altro
 tz = 10         # durata cambio piano
-tr = 3          # durata rotazione
+tr = 3          # durata riallineamento
 T = t1 - t0
 len_G = 0.02         # lunghezza griglia (righe)
 wid_G = 0.02         # larghezza griglia (colonne)
 height_G = 0.02      # altezza griglia (piani)
 dimCell = 0.1      # dimensiona cella
-offX, offY, offZ = 0.2, 0.45, 0.2     # offset per l'allineamento della griglia
+offX, offY, offZ = 0, 0.7, 0.7     # offset per l'allineamento della griglia
 i, j, k = 0, 0, 0     # coordinate cella
 x, y, z = 0, 0, 0     # coordinate spaziali
-pitch_rot = 3
-roll_rot = 3
+pitch_rot, yaw_rot = 10, 10
+pitch_step, yaw_step = 5, 5     # la rotazione deve essere divisibile per gli incrementi!
+
 
 # CREAZIONE GRIGLIA CARTESIANA
 cartesianGrid(len_G, wid_G, height_G, dimCell, offX, offY, offZ)
@@ -49,11 +50,12 @@ nextPose = griglia[f"cella_{i}_{j}_{k}"]
 # np.array(d.mocap_quat[1]) è l'orientamento in quaternioni come me lo dà mujoco -> [1 0 0 0]. pitch0.as_quat() è
 # l'orientamento in quaternioni da scipy ->[1 0 0 0]. pitch0.as_euler() è l'orientamento in angoli di Eulero da
 # scipy -> [180 0 0] (nell'ordine roll pitch yaw)
-or0 = R.from_quat(np.array(d.mocap_quat[1]))    # orientamento iniziale mocap body
+or0 = R.from_quat(np.array(d.mocap_quat[1]))
 or0 = or0.as_euler('xyz', degrees=True)
 t = 0
 
-yaw, pitch, roll = or0[0], or0[1], or0[2]  # orientamento (terna fissa) yaw(x) pitch(y) roll(z)
+yaw, pitch, roll = or0[2], or0[1], or0[0]  # orientamento (terna fissa) yaw(z) pitch(y) roll(x)
+or0_init = or0
 
 # Transitorio spawn bandiera
 while t <= 20:
@@ -80,95 +82,277 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             if int(t) == 25:
                 i += 1
 
-        # ROTAZIONE IN PITCH
-        for q in range(1, pitch_rot + 1, 1):
-            nextOr = [yaw, grigliaRad[f"rot_{q}"], roll]
+        # ROTAZIONE IN YAW
+        for p in range(yaw_step, yaw_rot + 1, yaw_step):
+            nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
             t = 0
-            while t <= tr:          # rotazione da 0 a 180
-                pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
-                orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
+            while t <= tr:  # rotazione positiva
+                yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
+                orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
+            # ROTAZIONE IN PITCH
+            for q in range(pitch_step, pitch_rot + 1, pitch_step):
+                or0 = nextOr
+                nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
+                t = 0
+                while t <= tr:  # rotazione positiva
+                    pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                or0 = nextOr
+                if q == pitch_rot:
+                    nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        pitch = move(or0[1], nextOr[1], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+            for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
+                or0 = nextOr
+                nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
+                t = 0
+                while t <= tr:  # rotazione negativa
+                    pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                if q == -pitch_rot:
+                    or0 = nextOr
+                    nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        pitch = move(or0[1], nextOr[1], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+            or0 = nextOr
+            if p == yaw_rot:
+                nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
+                t = 0
+                while t <= 10:  # ritorno a 0
+                    yaw = move(or0[2], nextOr[2], t, t0, 10)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+        for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
+            or0 = nextOr
+            nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
+            t = 0
+            while t <= tr:  # rotazione negativa
+                yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
+                orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                d.mocap_quat[1] = np.array(orientation.as_quat())
+                mujoco.mj_step(m, d)
+                viewer.sync()
+                t += timeStep
+            # ROTAZIONE IN PITCH
+            for q in range(pitch_step, pitch_rot + 1, pitch_step):
+                or0 = nextOr
+                nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
+                t = 0
+                while t <= tr:  # rotazione positiva
+                    pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                or0 = nextOr
+                if q == pitch_rot:
+                    nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        pitch = move(or0[1], nextOr[1], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+            for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
+                or0 = nextOr
+                nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
+                t = 0
+                while t <= tr:  # rotazione negativa
+                    pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                if q == -pitch_rot:
+                    or0 = nextOr
+                    nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        pitch = move(or0[1], nextOr[1], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+            if p == -yaw_rot:
+                or0 = nextOr
+                nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
+                t = 0
+                while t <= 10:  # ritorno a 0
+                    yaw = move(or0[2], nextOr[2], t, t0, 10)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+        or0 = or0_init
+
+        # ROTAZIONE IN PITCH
+        for q in range(pitch_step, pitch_rot + 1, pitch_step):
+            nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
+            t = 0
+            while t <= tr:  # rotazione positiva
+                pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
+                orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                d.mocap_quat[1] = np.array(orientation.as_quat())
+                mujoco.mj_step(m, d)
+                viewer.sync()
+                t += timeStep
+            # ROTAZIONE IN YAW
+            for p in range(yaw_step, yaw_rot + 1, yaw_step):
+                or0 = nextOr
+                nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
+                t = 0
+                while t <= tr:  # rotazione positiva
+                    yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                or0 = nextOr
+                if p == yaw_rot:
+                    nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        yaw = move(or0[2], nextOr[2], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+            for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
+                or0 = nextOr
+                nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
+                t = 0
+                while t <= tr:  # rotazione negativa
+                    yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                if p == -yaw_rot:
+                    or0 = nextOr
+                    nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        yaw = move(or0[2], nextOr[2], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+
             or0 = nextOr
             if q == pitch_rot:
-                nextOr = [yaw, grigliaRad[f"rot_{0}"], roll]
+                nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                 t = 0
-                while t <= 10:                  # ritorno a 0
+                while t <= 10:  # ritorno a 0
                     pitch = move(or0[1], nextOr[1], t, t0, 10)
-                    orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-        for q in range(-1, -pitch_rot - 1, -1):
+        for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
             or0 = nextOr
-            nextOr = [yaw, grigliaRad[f"rot_{q}"], roll]
+            nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
             t = 0
-            while t <= tr:                      # rotazione da 0 a -180
+            while t <= tr:  # rotazione negativa
                 pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
-                orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
+                orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
+            # ROTAZIONE IN YAW
+            for p in range(yaw_step, yaw_rot + 1, yaw_step):
+                nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
+                t = 0
+                while t <= tr:  # rotazione positiva
+                    yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                or0 = nextOr
+                if p == yaw_rot:
+                    nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        yaw = move(or0[2], nextOr[2], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
+            for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
+                or0 = nextOr
+                nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
+                t = 0
+                while t <= tr:  # rotazione negativa
+                    yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    d.mocap_quat[1] = np.array(orientation.as_quat())
+                    mujoco.mj_step(m, d)
+                    viewer.sync()
+                    t += timeStep
+                if p == -yaw_rot:
+                    or0 = nextOr
+                    nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
+                    t = 0
+                    while t <= 10:  # ritorno a 0
+                        yaw = move(or0[2], nextOr[2], t, t0, 10)
+                        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        d.mocap_quat[1] = np.array(orientation.as_quat())
+                        mujoco.mj_step(m, d)
+                        viewer.sync()
+                        t += timeStep
             if q == -pitch_rot:
                 or0 = nextOr
-                nextOr = [yaw, grigliaRad[f"rot_{0}"], roll]
+                nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                 t = 0
-                while t <= 10:                   # ritorno a 0
+                while t <= 10:  # ritorno a 0
                     pitch = move(or0[1], nextOr[1], t, t0, 10)
-                    orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
+                    orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-
-        # ROTAZIONE IN ROLL
-        for q in range(1, roll_rot + 1, 1):
-            nextOr = [yaw, pitch, grigliaRad[f"rot_{q}"]]
-            t = 0
-            while t <= tr:                      # rotazione da 0 a roll_rot
-                roll = move(or0[2], nextOr[2], t, t0, tr - t0)
-                orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
-                d.mocap_quat[1] = np.array(orientation.as_quat())
-                mujoco.mj_step(m, d)
-                viewer.sync()
-                t += timeStep
-            or0 = nextOr
-            if q == roll_rot:
-                nextOr = [yaw, pitch, grigliaRad[f"rot_{0}"]]
-                t = 0
-                while t <= 10:                   # ritorno a 0
-                    roll = move(or0[2], nextOr[2], t, t0, 10)
-                    orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
-                    d.mocap_quat[1] = np.array(orientation.as_quat())
-                    mujoco.mj_step(m, d)
-                    viewer.sync()
-                    t += timeStep
-        for q in range(-1, -roll_rot - 1, -1):
-            or0 = nextOr
-            nextOr = [yaw, pitch, grigliaRad[f"rot_{q}"]]
-            t = 0
-            while t <= tr:                      # rotazione da 0 a -roll_rot
-                roll = move(or0[2], nextOr[2], t, t0, tr - t0)
-                orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
-                d.mocap_quat[1] = np.array(orientation.as_quat())
-                mujoco.mj_step(m, d)
-                viewer.sync()
-                t += timeStep
-            if q == -roll_rot:
-                or0 = nextOr
-                nextOr = [yaw, pitch, grigliaRad[f"rot_{0}"]]
-                t = 0
-                while t <= 10:                          # ritorno a 0
-                    roll = move(or0[2], nextOr[2], t, t0, 10)
-                    orientation = R.from_euler('xyz', [180 - roll, pitch, 180 + yaw], degrees=True)
-                    d.mocap_quat[1] = np.array(orientation.as_quat())
-                    mujoco.mj_step(m, d)
-                    viewer.sync()
-                    t += timeStep
+        or0 = or0_init
 
         # Traslazione
         pos0 = nextPose
