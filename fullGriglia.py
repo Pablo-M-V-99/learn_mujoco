@@ -6,6 +6,8 @@ from scipy.spatial.transform import Rotation as R
 from scriptGriglia import creazioneGriglia as cartesianGrid
 from scriptGriglia import creazioneGrigliaRadiale as radialGrid
 from scriptTraiettoria import move
+from controlloVelocità import checkVel as speedCtrl
+from copy import deepcopy
 
 # PARAMETRI
 t0 = 0          # tempo iniziale
@@ -17,7 +19,7 @@ len_G = 0.02         # lunghezza griglia (righe)
 wid_G = 0.02         # larghezza griglia (colonne)
 height_G = 0.02      # altezza griglia (piani)
 dimCell = 0.1      # dimensiona cella
-offX, offY, offZ = 0, 0.7, 0.7     # offset per l'allineamento della griglia
+offX, offY, offZ = 0.3, 0.7, 0.7     # offset per l'allineamento della griglia
 i, j, k = 0, 0, 0     # coordinate cella
 x, y, z = 0, 0, 0     # coordinate spaziali
 pitch_rot, yaw_rot = 10, 10
@@ -79,279 +81,362 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             mujoco.mj_step(m, d)
             viewer.sync()
             t += timeStep
-            if int(t) == 25:
+            if t >= 25:
                 i += 1
 
         # ROTAZIONE IN YAW
+        # rotazione ccw
         for p in range(yaw_step, yaw_rot + 1, yaw_step):
             nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
             t = 0
-            while t <= tr:  # rotazione positiva
+            while t <= tr:
                 yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                prev_body = deepcopy(d.body)
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            # ROTAZIONE IN PITCH
+            speedCtrl(prev_body, m, d, timeStep, viewer)
+
+            # ROTAZIONE IN YAW/PITCH
+            # rotazione ccw
             for q in range(pitch_step, pitch_rot + 1, pitch_step):
                 or0 = nextOr
                 nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
                 t = 0
-                while t <= tr:  # rotazione positiva
+                # rotazione ccw
+                while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
                 or0 = nextOr
+                # riallineamento a 0
                 if q == pitch_rot:
                     nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
+            # rotazione cw
             for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
                 or0 = nextOr
                 nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
                 t = 0
-                while t <= tr:  # rotazione negativa
+                # rotazione cw
+                while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
                 if q == -pitch_rot:
                     or0 = nextOr
                     nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    # riallineamento a 0
+                    while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
             or0 = nextOr
+
+            # riallineamento a 0
             if p == yaw_rot:
                 nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
                 t = 0
-                while t <= 10:  # ritorno a 0
+                while t <= 10:
                     yaw = move(or0[2], nextOr[2], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
+        # rotazione cw
         for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
             or0 = nextOr
             nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
             t = 0
-            while t <= tr:  # rotazione negativa
+
+            while t <= tr:
                 yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                prev_body = deepcopy(d.body)
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            # ROTAZIONE IN PITCH
+            speedCtrl(prev_body, m, d, timeStep, viewer)
+
+            # ROTAZIONE IN YAW/PITCH
+            # rotazione ccw
             for q in range(pitch_step, pitch_rot + 1, pitch_step):
                 or0 = nextOr
                 nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
                 t = 0
-                while t <= tr:  # rotazione positiva
+                while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
                 or0 = nextOr
+                # riallineamento a 0
                 if q == pitch_rot:
                     nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
+            # rotazione cw
             for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
                 or0 = nextOr
                 nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
                 t = 0
-                while t <= tr:  # rotazione negativa
+                # rotazione cw
+                while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
                 if q == -pitch_rot:
                     or0 = nextOr
                     nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    # riallineamento a 0
+                    while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
+
+            # riallineamento a 0
             if p == -yaw_rot:
                 or0 = nextOr
                 nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
                 t = 0
-                while t <= 10:  # ritorno a 0
+                while t <= 10:
                     yaw = move(or0[2], nextOr[2], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
         or0 = or0_init
 
         # ROTAZIONE IN PITCH
+        # rotazione ccw
         for q in range(pitch_step, pitch_rot + 1, pitch_step):
             nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
             t = 0
-            while t <= tr:  # rotazione positiva
+            while t <= tr:
                 pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                prev_body = deepcopy(d.body)
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            # ROTAZIONE IN YAW
+            speedCtrl(prev_body, m, d, timeStep, viewer)
+
+            # ROTAZIONE IN PITCH/YAW
+            # rotazione ccw
             for p in range(yaw_step, yaw_rot + 1, yaw_step):
                 or0 = nextOr
                 nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
                 t = 0
-                while t <= tr:  # rotazione positiva
+                while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
                 or0 = nextOr
+                # riallineamento
                 if p == yaw_rot:
                     nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
+            # rotazione cw
             for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
                 or0 = nextOr
                 nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
                 t = 0
-                while t <= tr:  # rotazione negativa
+                while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
+                # riallineamento
                 if p == -yaw_rot:
                     or0 = nextOr
                     nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
             or0 = nextOr
+
+            # riallineamento
             if q == pitch_rot:
                 nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                 t = 0
-                while t <= 10:  # ritorno a 0
+                while t <= 10:
                     pitch = move(or0[1], nextOr[1], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
+        # rotazione cw
         for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
             or0 = nextOr
             nextOr = [roll, grigliaRad[f"rot_{q}"], yaw]
             t = 0
-            while t <= tr:  # rotazione negativa
+            while t <= tr:
                 pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                prev_body = deepcopy(d.body)
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            # ROTAZIONE IN YAW
+            speedCtrl(prev_body, m, d, timeStep, viewer)
+
+            # ROTAZIONE IN PITCH/YAW
+            # rotazione ccw
             for p in range(yaw_step, yaw_rot + 1, yaw_step):
                 nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
                 t = 0
-                while t <= tr:  # rotazione positiva
+                while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
                 or0 = nextOr
+                # riallineamento
                 if p == yaw_rot:
                     nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
+            # rotazione cw
             for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
                 or0 = nextOr
                 nextOr = [roll, pitch, grigliaRad[f"rot_{p}"]]
                 t = 0
-                while t <= tr:  # rotazione negativa
+                while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
+                # riallineamento
                 if p == -yaw_rot:
                     or0 = nextOr
                     nextOr = [roll, pitch, grigliaRad[f"rot_{0}"]]
                     t = 0
-                    while t <= 10:  # ritorno a 0
+                    while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+                        prev_body = deepcopy(d.body)
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
+                    speedCtrl(prev_body, m, d, timeStep, viewer)
+
+            # riallineamento
             if q == -pitch_rot:
                 or0 = nextOr
                 nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
                 t = 0
-                while t <= 10:  # ritorno a 0
+                while t <= 10:
                     pitch = move(or0[1], nextOr[1], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
+                    prev_body = deepcopy(d.body)
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
+                speedCtrl(prev_body, m, d, timeStep, viewer)
         or0 = or0_init
 
         # Traslazione
@@ -359,13 +444,16 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
         nextPose = griglia[f"cella_{i}_{j}_{k}"]
         t = 0
         while t <= T:
-            x = move(pos0[0], nextPose[0], t, t0, T)
+            x = move(pos0[0], nextPose[0], t, t0, T)        # coordinate mocap_body
             y = move(pos0[1], nextPose[1], t, t0, T)
             z = move(pos0[2], nextPose[2], t, t0, T)
+            prev_body = deepcopy(d.body)
             d.mocap_pos[1] = np.array([x, y, z])
             mujoco.mj_step(m, d)
             viewer.sync()
             t += timeStep
+        speedCtrl(prev_body, m, d, timeStep, viewer)
+
         T = t1 - t0
 
         # Movimento lungo X, Y e Z
