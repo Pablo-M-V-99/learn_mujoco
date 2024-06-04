@@ -160,3 +160,5 @@ cython_debug/
 .idea/
 /MUJOCO_LOG.TXT
 /prova.py
+/provaDepth.py
+/grigliaRadiale.json
