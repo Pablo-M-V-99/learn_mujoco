@@ -14,20 +14,6 @@ def move(pos0, nextPose, t, T):
     q = a0 + a1*t + a2*(t ** 2) + a3*(t ** 3) + a4*(t ** 4) + a5*(t ** 5)
     return q
 
-# def riallineamento(m, d, viewer, or0, nextOr, tR, timeStep):
-#         t = 0
-#         while t <= tR:
-#             yaw = move(or0[2], nextOr[2], t, tR)
-#             pitch = move(or0[1], nextOr[1], t, tR)
-#             roll = move(or0[0], nextOr[0], t, tR)
-#             orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-#             if t >= tR - 2 * timeStep:  # memorizzazione ultima posa per il controllo velocità
-#                 prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
-#             d.mocap_quat[1] = np.array(orientation.as_quat())
-#             mujoco.mj_step(m, d)
-#             viewer.sync()
-#             t += timeStep
-#         speedCtrl(prevPose, m, d, timeStep)
 
 def angleStep(m, d, viewer, or0, nextOr, tr, timeStep):
     t = 0
@@ -53,7 +39,7 @@ def posStep(m, d, viewer, pos0, nextPose, T, timeStep):
         x = move(pos0[0], nextPose[0], t, T)  # coordinate mocap_body
         y = move(pos0[1], nextPose[1], t, T)
         z = move(pos0[2], nextPose[2], t, T)
-        if t >= T - 2 * timeStep:
+        if t >= T - 2 * timeStep:   # memorizzazione ultima posa per il controllo velocità
             prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
         d.mocap_pos[1] = np.array([x, y, z])
         mujoco.mj_step(m, d)
