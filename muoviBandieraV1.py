@@ -2,7 +2,7 @@ import time
 import mujoco.viewer
 import numpy as np
 import json
-from saveLabels import saveLabels
+from scriptSaveLabels import saveLabels
 from scipy.spatial.transform import Rotation as R
 from scriptGriglia import creazioneGriglia as cartesianGrid
 from scriptGriglia import creazioneGrigliaRadiale as radialGrid
@@ -20,25 +20,25 @@ tR = 4          # durata riallineamento
 # nodi grglia (x+1)
 len_G = 1         # lunghezza griglia (righe)
 wid_G = 1         # larghezza griglia (colonne)
-height_G = 1      # altezza griglia (piani)
+height_G = 0      # altezza griglia (piani)
 dimCell = 0.05        # distanza fra due nodi adiacenti (cm)
-offX, offY, offZ = 0, 0.3, 0      # offset per l'allineamento della griglia (cm)
+offX, offY, offZ = 0, 0, 0      # offset per l'allineamento della griglia (cm)
 
 # coordinate cella
 i, j, k = 0, 0, 0
 
 # rotazione
 pitch_rot, yaw_rot = 10, 6     # la rotazione deve essere divisibile per gli incrementi!
-pitch_step, yaw_step = 5, 3
+pitch_step, yaw_step = 5, 3    # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
+                               #  sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
-# view = True
-view = False
+view = True
+# view = False
 
 depth_images = []
 segmentation_images = []
-A_ws_TCP = []
 angles = []
-
+poses = []
 
 # CREAZIONE GRIGLIA CARTESIANA
 cartesianGrid(len_G, wid_G, height_G, dimCell, offX, offY, offZ)
@@ -94,17 +94,17 @@ while i <= wid_G and j <= len_G and k <= height_G:
         posStep(m, d, viewer, pos0, nextPose, 25, timeStep)
         i += 1
 
-    depth_images, segmentation_images, A_ws_TCP, angles = imageAcquisition(m, d, yaw, pitch, roll, depth_images,
-                                                                   segmentation_images, A_ws_TCP, angles)
+    depth_images, segmentation_images, angles, poses = imageAcquisition(m, d, yaw, pitch, roll, depth_images,
+                                                        segmentation_images, angles, poses)
 
     # creaRotMat(d, yaw, pitch, roll)
     # ROTAZIONI
-    depth_images, segmentation_images, A_ws_TCP, angles = firstRot('YAW', m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot,
-                                                 or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep, depth_images,
-                                                 segmentation_images, A_ws_TCP, angles)
-    depth_images, segmentation_images, A_ws_TCP, angles = firstRot('YAW', m, d, viewer, -yaw_step, -yaw_rot, pitch_step, pitch_rot,
-                                                 or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep, depth_images,
-                                                 segmentation_images, A_ws_TCP, angles)
+    depth_images, segmentation_images, angles, poses = firstRot('YAW', m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot,
+                                                        or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep, depth_images,
+                                                        segmentation_images, angles, poses)
+    depth_images, segmentation_images, angles, poses = firstRot('YAW', m, d, viewer, -yaw_step, -yaw_rot, pitch_step, pitch_rot,
+                                                        or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep, depth_images,
+                                                        segmentation_images, angles, poses)
 
     # firstRot('PITCH', m, d, viewer, pitch_step, pitch_rot, yaw_step, yaw_rot, or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep)
     # firstRot('PITCH', m, d, viewer, -pitch_step, -pitch_rot, yaw_step, yaw_rot, or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep)
@@ -143,5 +143,5 @@ while i <= wid_G and j <= len_G and k <= height_G:
 np.savez('immaginiDepth.npz', depth_images)
 np.savez('immaginiSegmentate.npz', segmentation_images)
 
-saveLabels(A_ws_TCP, angles)
+saveLabels(angles, poses)
 

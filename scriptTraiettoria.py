@@ -1,6 +1,6 @@
 import mujoco.viewer
 import numpy as np
-from controlloVelocità import speedCtrl
+from scriptControlloVelocità import speedCtrl
 from scipy.spatial.transform import Rotation as R
 
 

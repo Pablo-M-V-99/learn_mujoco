@@ -5,21 +5,21 @@ import json
 from scipy.spatial.transform import Rotation as R
 from scriptGriglia import creazioneGriglia as cartesianGrid
 from scriptGriglia import creazioneGrigliaRadiale as radialGrid
-from scriptTraiettoria import move
-from controlloVelocità import checkVel as speedCtrl
-from copy import deepcopy
+from scriptTraiettoria import move, pitchRot, yawRot
+from scriptControlloVelocità import speedCtrl
 
 # PARAMETRI
 t0 = 0          # tempo iniziale
-t1 = 5          # durata movimento da un punto della griglia all'altro
-tz = 10         # durata cambio piano
-tr = 3          # durata riallineamento
+t1 = 2          # durata movimento da un punto della griglia all'altro
+tz = 8          # durata cambio piano
+tr = 2          # durata rotazione
+tR = 4          # durata riallineamento
 T = t1 - t0
 len_G = 0.02         # lunghezza griglia (righe)
 wid_G = 0.02         # larghezza griglia (colonne)
 height_G = 0.02      # altezza griglia (piani)
 dimCell = 0.1      # dimensiona cella
-offX, offY, offZ = 0.3, 0.7, 0.7     # offset per l'allineamento della griglia
+offX, offY, offZ = 0.3, 0.3, 0.3     # offset per l'allineamento della griglia
 i, j, k = 0, 0, 0     # coordinate cella
 x, y, z = 0, 0, 0     # coordinate spaziali
 pitch_rot, yaw_rot = 10, 10
@@ -92,12 +92,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             while t <= tr:
                 yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                prev_body = deepcopy(d.body)
+                if t >= tr - 2*timeStep:
+                    prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            speedCtrl(prev_body, m, d, timeStep, viewer)
+            speedCtrl(prevPose, m, d, timeStep)
 
             # ROTAZIONE IN YAW/PITCH
             # rotazione ccw
@@ -109,12 +110,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 or0 = nextOr
                 # riallineamento a 0
                 if q == pitch_rot:
@@ -123,12 +125,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
             # rotazione cw
             for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
                 or0 = nextOr
@@ -138,12 +141,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 if q == -pitch_rot:
                     or0 = nextOr
                     nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
@@ -152,12 +156,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
             or0 = nextOr
 
             # riallineamento a 0
@@ -167,12 +172,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= 10:
                     yaw = move(or0[2], nextOr[2], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
         # rotazione cw
         for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
             or0 = nextOr
@@ -182,12 +188,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             while t <= tr:
                 yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                prev_body = deepcopy(d.body)
+                if t >= tr - 2 * timeStep:
+                    prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            speedCtrl(prev_body, m, d, timeStep, viewer)
+            speedCtrl(prevPose, m, d, timeStep)
 
             # ROTAZIONE IN YAW/PITCH
             # rotazione ccw
@@ -198,12 +205,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 or0 = nextOr
                 # riallineamento a 0
                 if q == pitch_rot:
@@ -212,12 +220,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
             # rotazione cw
             for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
                 or0 = nextOr
@@ -227,12 +236,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 if q == -pitch_rot:
                     or0 = nextOr
                     nextOr = [roll, grigliaRad[f"rot_{0}"], yaw]
@@ -241,12 +251,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         pitch = move(or0[1], nextOr[1], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
 
             # riallineamento a 0
             if p == -yaw_rot:
@@ -256,12 +267,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= 10:
                     yaw = move(or0[2], nextOr[2], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
         or0 = or0_init
 
         # ROTAZIONE IN PITCH
@@ -272,12 +284,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             while t <= tr:
                 pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                prev_body = deepcopy(d.body)
+                if t >= tr - 2 * timeStep:
+                    prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            speedCtrl(prev_body, m, d, timeStep, viewer)
+            speedCtrl(prevPose, m, d, timeStep)
 
             # ROTAZIONE IN PITCH/YAW
             # rotazione ccw
@@ -288,12 +301,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 or0 = nextOr
                 # riallineamento
                 if p == yaw_rot:
@@ -302,12 +316,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
             # rotazione cw
             for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
                 or0 = nextOr
@@ -316,12 +331,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 # riallineamento
                 if p == -yaw_rot:
                     or0 = nextOr
@@ -330,12 +346,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
             or0 = nextOr
 
             # riallineamento
@@ -345,12 +362,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= 10:
                     pitch = move(or0[1], nextOr[1], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2 * timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
         # rotazione cw
         for q in range(-pitch_step, -pitch_rot - 1, -pitch_step):
             or0 = nextOr
@@ -359,12 +377,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             while t <= tr:
                 pitch = move(or0[1], nextOr[1], t, t0, tr - t0)
                 orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
-                prev_body = deepcopy(d.body)
+                if t >= tr - 2 * timeStep:
+                    prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                 d.mocap_quat[1] = np.array(orientation.as_quat())
                 mujoco.mj_step(m, d)
                 viewer.sync()
                 t += timeStep
-            speedCtrl(prev_body, m, d, timeStep, viewer)
+            speedCtrl(prevPose, m, d, timeStep)
 
             # ROTAZIONE IN PITCH/YAW
             # rotazione ccw
@@ -374,12 +393,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 or0 = nextOr
                 # riallineamento
                 if p == yaw_rot:
@@ -388,12 +408,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
             # rotazione cw
             for p in range(-yaw_step, -yaw_rot - 1, -yaw_step):
                 or0 = nextOr
@@ -402,12 +423,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= tr:
                     yaw = move(or0[2], nextOr[2], t, t0, tr - t0)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
                 # riallineamento
                 if p == -yaw_rot:
                     or0 = nextOr
@@ -416,12 +438,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                     while t <= 10:
                         yaw = move(or0[2], nextOr[2], t, t0, 10)
                         orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
-                        prev_body = deepcopy(d.body)
+                        if t >= tr - 2 * timeStep:
+                            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                         d.mocap_quat[1] = np.array(orientation.as_quat())
                         mujoco.mj_step(m, d)
                         viewer.sync()
                         t += timeStep
-                    speedCtrl(prev_body, m, d, timeStep, viewer)
+                    speedCtrl(prevPose, m, d, timeStep)
 
             # riallineamento
             if q == -pitch_rot:
@@ -431,12 +454,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
                 while t <= 10:
                     pitch = move(or0[1], nextOr[1], t, t0, 10)
                     orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 + roll], degrees=True)
-                    prev_body = deepcopy(d.body)
+                    if t >= tr - 2*timeStep:
+                        prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
                     d.mocap_quat[1] = np.array(orientation.as_quat())
                     mujoco.mj_step(m, d)
                     viewer.sync()
                     t += timeStep
-                speedCtrl(prev_body, m, d, timeStep, viewer)
+                speedCtrl(prevPose, m, d, timeStep)
         or0 = or0_init
 
         # Traslazione
@@ -447,12 +471,13 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
             x = move(pos0[0], nextPose[0], t, t0, T)        # coordinate mocap_body
             y = move(pos0[1], nextPose[1], t, t0, T)
             z = move(pos0[2], nextPose[2], t, t0, T)
-            prev_body = deepcopy(d.body)
+            if t >= t1 - 2 * timeStep:
+                prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
             d.mocap_pos[1] = np.array([x, y, z])
             mujoco.mj_step(m, d)
             viewer.sync()
             t += timeStep
-        speedCtrl(prev_body, m, d, timeStep, viewer)
+        speedCtrl(prevPose, m, d, timeStep)
 
         T = t1 - t0
 
