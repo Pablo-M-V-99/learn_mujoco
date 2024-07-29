@@ -44,7 +44,7 @@ def secondRot(flag, m, d, viewer, sec_step, sec_rot, or0,
 
         roll, pitch, yaw, or0 = angleStep(m, d, viewer, or0, nextOr, tr, timeStep)
 
-        depth_images, seg_images,  angles, poses = imageAcquisition(m, d, yaw, pitch, roll, depth_images, seg_images, angles, poses)
+        depth_images, seg_images, angles, poses = imageAcquisition(m, d, yaw, pitch, roll, depth_images, seg_images, angles, poses)
 
         # riallineamento
         if q == sec_rot:

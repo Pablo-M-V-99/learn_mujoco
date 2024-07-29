@@ -18,17 +18,18 @@ def imageAcquisition(m, d, yaw, pitch, roll, depth_images, seg_images, angles, p
 
         # depth is a float array, in meters.
         depth_frame = renderer.render()
+        depth = depth_frame
         # Shift nearest values to the origin.
-        depth_frame -= depth_frame.min()
+        depth -= depth_frame.min()
         # Scale by 2 mean distances of near rays.
-        depth_frame /= 2 * depth_frame[depth_frame <= 1].mean()
+        depth /= 2 * depth_frame[depth_frame <= 1].mean()
         # Scale to [0, 255]
-        depth_frame = 255 * np.clip(depth_frame, 0, 1)
+        depth = 255 * np.clip(depth_frame, 0, 1)
 
-        depth_images.append(depth_frame)
+        depth_images.append(depth)
         renderer.disable_depth_rendering()
 
-        # plt.imshow(depth_frame, cmap='gray')
+        # plt.imshow(depth, cmap='gray')
         # plt.show()
 
     # SEGMENTATION
@@ -52,7 +53,8 @@ def imageAcquisition(m, d, yaw, pitch, roll, depth_images, seg_images, angles, p
         # plt.imshow(seg_frame, cmap='Dark2')
         # plt.show()
 
-    rot_x = (180 - roll)    # rotazione asse x di giorgio
+    # manipolazione angoli per Giorgio
+    rot_x = roll    # rotazione asse x di giorgio
     rot_y = pitch           # rotazione asse y di giorgio
     rot_z = -yaw            # rotazione asse z di giorgio
 

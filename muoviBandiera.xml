@@ -30,11 +30,11 @@
 
 			<camera name="azure_kinect" mode="fixed" resolution="640 576" pos="0 0 0.5" fovy="65" euler="40 0 0"/>
 
-<!--			<geom name="middle_sphere" size=".02" rgba="0 1 1 1"/>&ndash;&gt;-->
-<!--			-->
-<!--			<site pos="0 0 0.075" size="0.003 0.003 0.1" type="box" name="Z_1" rgba="0 0 1 1"/>-->
-<!--			<site pos="0 0.075 0" size="0.003 0.1 0.003" type="box" name="Y_1" rgba="0 1 0 1"/>-->
-<!--			<site pos="0.075 0 0" size="0.1 0.003 0.003" type="box" name="X_1" rgba="1 0 0 1"/>-->
+			<geom name="middle_sphere" size=".02" rgba="0 1 1 1"/>-->
+
+			<site pos="0 0 0.075" size="0.003 0.003 0.1" type="box" name="Z_1" rgba="0 0 1 1"/>
+			<site pos="0 0.075 0" size="0.003 0.1 0.003" type="box" name="Y_1" rgba="0 1 0 1"/>
+			<site pos="0.075 0 0" size="0.1 0.003 0.003" type="box" name="X_1" rgba="1 0 0 1"/>
 
 		</body>
 
@@ -65,10 +65,19 @@
 
   	<equality>
 
+		<!-- lato Uomo-->
 		<connect body1="flag_18" body2="manoDx" anchor="0 0 0"/>
 		<connect body1="flag_170" body2="manoSx" anchor="0 0 0"/>
 
+		<!--lato robot-->
 		<connect body1="flag_0" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_37" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_38" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_75" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_76" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_113" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_114" body2="sferaCentrale" anchor="0 0 0"/>
+		<connect body1="flag_151" body2="sferaCentrale" anchor="0 0 0"/>
 		<connect body1="flag_152" body2="sferaCentrale" anchor="0 0 0"/>
 
 	</equality>

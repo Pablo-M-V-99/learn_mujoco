@@ -2,12 +2,11 @@ import mujoco.viewer
 import numpy as np
 
 def speedCtrl(prevPose, m, d, timeStep)-> bool:
-    n_body = 171
     counter = 0
     max_counter = 10
     while True:
 
-        currentPose = np.array([d.body(f"flag_{i}").xpos for i in range(n_body)])
+        currentPose = np.array([d.body(f"flag_{i}").xpos for i in range(d.flexvert_xpos.shape[0])])
         lin_speed = (currentPose - prevPose) / timeStep
         max_speed = np.max(np.linalg.norm(lin_speed, axis=1))
         # ang_speed = [(R.from_quat(d.body(f"flag_{i}").xquat).as_euler('xyz') -
@@ -24,7 +23,7 @@ def speedCtrl(prevPose, m, d, timeStep)-> bool:
             return True
 
         if counter > max_counter:
-            print(f"Il counter ha superato la threshold. Corpo non fermo")
+            print(f"Il counter ha superato il valore soglia. Corpo non fermo")
             return False
 
 if __name__ == "__main__":

@@ -21,10 +21,10 @@ def angleStep(m, d, viewer, or0, nextOr, tr, timeStep):
         yaw = move(or0[2], nextOr[2], t, tr)
         pitch = move(or0[1], nextOr[1], t, tr)
         roll = move(or0[0], nextOr[0], t, tr)
-        orientation = R.from_euler('xyz', [180 - yaw, -pitch, 180 - roll], degrees=True)
+        orientation = R.from_euler('xyz', [roll, pitch, yaw], degrees=True)
         if t >= tr - 2 * timeStep:  # memorizzazione ultima posa per il controllo velocità
-            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
-        d.mocap_quat[1] = np.array(orientation.as_quat())
+            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(d.flexvert_xpos.shape[0])])
+        d.mocap_quat[1] = np.array(orientation.as_quat(scalar_first=True))
         mujoco.mj_step(m, d)
         if viewer:
             viewer.sync()
@@ -40,7 +40,7 @@ def posStep(m, d, viewer, pos0, nextPose, T, timeStep):
         y = move(pos0[1], nextPose[1], t, T)
         z = move(pos0[2], nextPose[2], t, T)
         if t >= T - 2 * timeStep:   # memorizzazione ultima posa per il controllo velocità
-            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(171)])
+            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(d.flexvert_xpos.shape[0])])
         d.mocap_pos[1] = np.array([x, y, z])
         mujoco.mj_step(m, d)
         if viewer:
