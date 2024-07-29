@@ -62,12 +62,9 @@ timeStep = m.opt.timestep               # mujoco simulation timestep
 pos0 = np.array(d.mocap_pos[1])         # posa iniziale mocap body
 nextPose = griglia[f"cella_{i}_{j}_{k}"]
 
-# np.array(d.mocap_quat[1]) è l'orientamento in quaternioni come me lo dà mujoco -> [1 0 0 0]. pitch0.as_quat() è
-# l'orientamento in quaternioni da scipy ->[1 0 0 0]. pitch0.as_euler() è l'orientamento in angoli di Eulero da
-# scipy -> [180 0 0] (nell'ordine roll pitch yaw)
-
-
-
+# np.array(d.mocap_quat[1]) è l'orientamento in quaternioni come me lo dà mujoco -> [1 0 0 0].
+# pitch0.as_euler() è l'orientamento in angoli di Eulero da scipy -> [180 0 0] (nell'ordine roll pitch yaw)
+# devo riordinare il quaternione
 or0 = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True)
 or0 = or0.as_euler('xyz', degrees=True)
 t = 0
