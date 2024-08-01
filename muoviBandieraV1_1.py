@@ -31,8 +31,8 @@ pitch_rot, yaw_rot = 10, 6     # la rotazione deve essere divisibile per gli inc
 pitch_step, yaw_step = 5, 3    # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
                                #  sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
-view = True
-# view = False
+# view = True
+view = False
 
 depth_images = []
 segmentation_images = []

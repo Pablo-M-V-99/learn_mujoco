@@ -29,8 +29,8 @@ def imageAcquisition(m, d, yaw, pitch, roll, depth_images, seg_images, angles, p
         depth_images.append(depth)
         renderer.disable_depth_rendering()
 
-        # plt.imshow(depth, cmap='gray')
-        # plt.show()
+        plt.imshow(depth, cmap='gray')
+        plt.show()
 
     # SEGMENTATION
     with mujoco.Renderer(m, height, width) as renderer:

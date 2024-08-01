@@ -20,11 +20,11 @@ tr = 2          # durata rotazione
 tR = 4          # durata riallineamento
 
 # nodi grglia (x+1)
-len_G = 1         # lunghezza griglia (righe)
-wid_G = 1         # larghezza griglia (colonne)
-height_G = 0      # altezza griglia (piani)
+len_G = 3         # lunghezza griglia (righe)
+wid_G = 3         # larghezza griglia (colonne)
+height_G = 3      # altezza griglia (piani)
 dimCell = 0.05        # distanza fra due nodi adiacenti (cm)
-offX, offY, offZ = 0, 0, 0      # offset per l'allineamento della griglia (cm)
+offX, offY, offZ = 0, 0.45, 0      # offset per l'allineamento della griglia (cm)
 
 # coordinate cella
 i, j, k = 0, 0, 0
@@ -60,11 +60,12 @@ mass = 0.1
 radius = 0.001
 damping = 0.001
 poisson = 0
-young = 200
+young = 20
 thickness = 1e-2
 pos = [0, 0, 1.5]
-dimension = [25, 50, 1]
-spacing = [0.02, 0.02, 0.01]
+dimension = [19, 19, 1]
+spacing = [0.05, 0.05, 1]
+posizione_mano = 0.50
 
 xml_file = """
 <mujoco model="muovoBandiera2">
@@ -84,16 +85,14 @@ xml_file = """
 
 </mujoco>		
 """
-root = ET.fromstring(xml_file)
-xml_file = lenzuolo_maker(root, mass, radius, damping, poisson, young, thickness, pos, dimension, spacing)
 
-for i in range(dimension[0]):
-    for j in range(dimension[1]):
-        pos[i, j]
-xml_file = connect_maker(root, dimension)
+root = ET.fromstring(xml_file)
+
+xml_file = lenzuolo_maker(root, mass, radius, damping, poisson, young, thickness, pos, dimension, spacing)
+xml_file = connect_maker(root, dimension, spacing, posizione_mano)
 
 xml_str = ET.tostring(xml_file, encoding='unicode', method='xml')
-# print(xml_str)
+print(xml_str)
 
 m = mujoco.MjModel.from_xml_string(xml_str)
 d = mujoco.MjData(m)

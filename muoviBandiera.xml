@@ -60,6 +60,8 @@
 		    	</plugin>
 		  	</flexcomp>
 		</body>
+		<!-- BODY 5 -->
+		<body name="ternaUomo" mocap="true" pos="0 0.5 1.5"/>
 
 	</worldbody>
 
