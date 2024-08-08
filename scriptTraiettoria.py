@@ -5,6 +5,15 @@ from scipy.spatial.transform import Rotation as R
 
 
 def move(pos0, nextPose, t, T):
+    """
+    Calcola il polinomio di grado 5 impiegato per la traiettoria
+    :param pos0: posa all'istante iniziale
+    :param nextPose: posa da raggiungere (all'istante finale)
+    :param t: istante di tempo t
+    :param T: durata del movimento
+    :return: variabile al termine del movimento
+    """
+
     a0 = pos0
     a1 = 0
     a2 = 0
@@ -15,8 +24,21 @@ def move(pos0, nextPose, t, T):
     return q
 
 
-def angleStep(m, d, viewer, or0, nextOr, tr, timeStep):
+def angleStep(m, d, viewer, or0, nextOr, tr):
+    """
+    Esegue il movimento rotatorio per passare da una posa alla successiva (griglia radiale).
+
+    :param m: Mujoco model
+    :param d: Mujoco data
+    :param viewer: viewer per consenteri la sincronizzazione del viewer
+    :param or0: orientamento all'inizio del movimento
+    :param nextOr: orientamento al termine del movimento
+    :param tr: durata del movimento
+    :return: l'orientamento al termine del movimento (roll, pitch, yaw) e la prossima posa (nextOr)
+    """
     t = 0
+    timeStep = m.opt.timestep  # mujoco simulation timestep
+
     while t <= tr:
         yaw = move(or0[2], nextOr[2], t, tr)
         pitch = move(or0[1], nextOr[1], t, tr)
@@ -29,12 +51,23 @@ def angleStep(m, d, viewer, or0, nextOr, tr, timeStep):
         if viewer:
             viewer.sync()
         t += timeStep
-    speedCtrl(prevPose, m, d, timeStep)
+    speedCtrl(m, d, viewer, prevPose)
     return roll, pitch, yaw, nextOr
 
 
-def posStep(m, d, viewer, pos0, nextPose, T, timeStep):
+def posStep(m, d, viewer, pos0, nextPose, T):
+    """
+    Esegue il movimento per spostarsi alla posizione successiva (della griglia cartesiana).
+
+    :param m: Mujoco model
+    :param d: Mujoco data
+    :param viewer: viewer per consenteri la sincronizzazione del viewer
+    :param pos0: posizione all'inizio del movimento
+    :param nextPose: posizione al termine del movimento
+    :param T: durata del movimento
+    """
     t = 0
+    timeStep = m.opt.timestep  # mujoco simulation timestep
     while t <= T:
         x = move(pos0[0], nextPose[0], t, T)  # coordinate mocap_body
         y = move(pos0[1], nextPose[1], t, T)
@@ -46,7 +79,7 @@ def posStep(m, d, viewer, pos0, nextPose, T, timeStep):
         if viewer:
             viewer.sync()
         t += timeStep
-    speedCtrl(prevPose, m, d, timeStep)
+    speedCtrl(m, d, viewer, prevPose)
 
 
 if __name__ == "__main__":

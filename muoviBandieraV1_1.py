@@ -5,7 +5,7 @@ from scriptSaveLabels import saveLabels
 from scipy.spatial.transform import Rotation as R
 from scriptGriglia import creazioneGriglia as cartesianGrid
 from scriptGriglia import creazioneGrigliaRadiale as radialGrid
-from scriptTraiettoria import move, posStep
+from scriptTraiettoria import posStep
 from scriptYawAndPitch import firstRot
 from scriptImageAcquisition import imageAcquisition
 
@@ -16,23 +16,23 @@ tz = 7          # durata cambio piano
 tr = 2          # durata rotazione
 tR = 4          # durata riallineamento
 
-# nodi griglia (x+1)
-len_G = 1         # lunghezza griglia (righe)
-wid_G = 1         # larghezza griglia (colonne)
-height_G = 0      # altezza griglia (piani)
+# nodi griglia
+len_G = 2         # numero di nodi lungo Y
+wid_G = 2         # numero di nodi lungo X
+height_G = 2      # numero di nodi lungo Z
 dimCell = 0.05        # distanza fra due nodi adiacenti (cm)
-offX, offY, offZ = 0, 0, 0      # offset per l'allineamento della griglia (cm)
+offX, offY, offZ = 0, 0, 0 - 1.5      # offset per l'allineamento della griglia (cm)
 
 # coordinate cella
 i, j, k = 0, 0, 0
 
 # rotazione
-pitch_rot, yaw_rot = 10, 6     # la rotazione deve essere divisibile per gli incrementi!
-pitch_step, yaw_step = 5, 3    # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
-                               #  sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
+pitch_rot, yaw_rot = 20, 30         # la rotazione deve essere divisibile per gli incrementi!
+pitch_step, yaw_step = 20, 30       # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
+                                    # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
-# view = True
-view = False
+view = True
+# view = False
 
 depth_images = []
 segmentation_images = []
@@ -48,9 +48,6 @@ with open(json_path, "r") as file:
 
 # CREAZIONE GRIGLIA RADIALE
 radialGrid()
-json_path = (f"/home/pablo/PycharmProjects/learn_mujoco/grigliaRadiale.json")
-with open(json_path, "r") as file:
-    grigliaRad = json.load(file)
 
 # CARICAMENTO MODELLO MUJOCO XML
 xml_path = "/home/pablo/PycharmProjects/learn_mujoco/muoviBandiera.xml"
@@ -84,40 +81,38 @@ while t <= 20:
     t += timeStep
     mujoco.mj_step(m, d)
 
-while i <= wid_G and j <= len_G and k <= height_G:
+while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
 
     # MOVIMENTO SU TUTTA LA GRIGLIA
 
     # Allineamento con la griglia
     if i == 0 and j == 0 and k == 0:
-        posStep(m, d, viewer, pos0, nextPose, 25, timeStep)
+        posStep(m, d, viewer, pos0, nextPose, 25)
         i += 1
 
-    depth_images, segmentation_images, angles, poses = imageAcquisition(m, d, yaw, pitch, roll, depth_images,
-                                                        segmentation_images, angles, poses)
+    depth_images, segmentation_images, angles, poses = imageAcquisition(m, d, depth_images, segmentation_images, angles,
+                                                                        poses)
 
-    # creaRotMat(d, yaw, pitch, roll)
     # ROTAZIONI
-    depth_images, segmentation_images, angles, poses = firstRot('YAW', m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot,
-                                                        or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep, depth_images,
-                                                        segmentation_images, angles, poses)
-    depth_images, segmentation_images, angles, poses = firstRot('YAW', m, d, viewer, -yaw_step, -yaw_rot, pitch_step, pitch_rot,
-                                                        or0, roll, pitch, yaw, grigliaRad, tr, tR, timeStep, depth_images,
-                                                        segmentation_images, angles, poses)
+    depth_images, segmentation_images, angles, poses = firstRot(m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot,
+                                                                or0, tr, tR, depth_images,
+                                                                segmentation_images, angles, poses)
+    depth_images, segmentation_images, angles, poses = firstRot(m, d, viewer, -yaw_step, -yaw_rot, pitch_step, pitch_rot,
+                                                                or0, tr, tR, depth_images,
+                                                                segmentation_images, angles, poses)
 
     # TRASLAZIONE
     pos0 = nextPose
     nextPose = griglia[f"cella_{i}_{j}_{k}"]
-    posStep(m, d, viewer, pos0, nextPose, t1, timeStep)
-    # creaRotMat(d, yaw, pitch, roll)
+    posStep(m, d, viewer, pos0, nextPose, t1)
     T = t1
 
     # Movimento lungo X, Y e Z
     if j % 2 == 0:                                  # riga pari
-        if i == wid_G and j != len_G:   # incrementa riga se non sono all'ultima riga
+        if i == wid_G - 1  and j != len_G - 1:   # incrementa riga se non sono all'ultima riga
             j += 1
         else:
-            if i != wid_G:                    # incrementa colonna se non sono all'ultima colonna
+            if i != wid_G - 1:                    # incrementa colonna se non sono all'ultima colonna
                 i += 1
             else:                                   # inc. piano se all'ultima colonna e
                 k += 1
@@ -125,7 +120,7 @@ while i <= wid_G and j <= len_G and k <= height_G:
                 j = 0
                 T = tz
     else:                                           # riga dispari
-        if i == 0 and j != len_G:             # incrementa riga se non sono all'ultima riga
+        if i == 0 and j != len_G - 1:             # incrementa riga se non sono all'ultima riga
             j += 1
         else:
             if i != 0:                              # decrementa colonna se non sono alla prima colonna

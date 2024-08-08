@@ -166,3 +166,4 @@ cython_debug/
 /visualizzazioneDepth.py
 /ss01.stl
 /pulley_maker.py
+/syntehtic_dataset/
