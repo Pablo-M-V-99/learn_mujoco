@@ -81,8 +81,7 @@ poses = []
 
 # CREAZIONE GRIGLIA CARTESIANA
 cartesianGrid(len_G, wid_G, height_G, dimCell, offX, offY, offZ)
-json_path = (f"/home/pablo/PycharmProjects/learn_mujoco/griglia_{wid_G}x"
-             f"{len_G}x{height_G}.json")
+json_path = (f"griglia_{wid_G}x{len_G}x{height_G}.json")
 with open(json_path, "r") as file:
     griglia = json.load(file)
 
