@@ -4,9 +4,9 @@ import json
 from scriptSaveLabels import saveLabels
 from scipy.spatial.transform import Rotation as R
 from scriptGriglia import creazioneGriglia as cartesianGrid
-from scriptGriglia import creazioneGrigliaRadiale as radialGrid
+# from scriptGriglia import creazioneGrigliaRadiale as radialGrid
 from scriptTraiettoria import posStep
-from scriptYawAndPitch import firstRot
+from scriptYawAndPitch import firstRot, secondRot
 from scriptImageAcquisition import imageAcquisition
 
 # PARAMETRI
@@ -27,8 +27,8 @@ offX, offY, offZ = 0, 0, 0 - 1.5      # offset per l'allineamento della griglia 
 i, j, k = 0, 0, 0
 
 # rotazione
-pitch_rot, yaw_rot = 20, 30         # la rotazione deve essere divisibile per gli incrementi!
-pitch_step, yaw_step = 20, 30       # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
+pitch_rot, yaw_rot = 10, 12         # la rotazione deve essere divisibile per gli incrementi!
+pitch_step, yaw_step = 10, 12       # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
                                     # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
 view = True
@@ -46,8 +46,8 @@ json_path = (f"/home/pablo/PycharmProjects/learn_mujoco/griglia_{wid_G}x"
 with open(json_path, "r") as file:
     griglia = json.load(file)
 
-# CREAZIONE GRIGLIA RADIALE
-radialGrid()
+# # CREAZIONE GRIGLIA RADIALE
+# radialGrid()
 
 # CARICAMENTO MODELLO MUJOCO XML
 xml_path = "/home/pablo/PycharmProjects/learn_mujoco/muoviBandiera.xml"
@@ -90,22 +90,29 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
         posStep(m, d, viewer, pos0, nextPose, 25)
         i += 1
 
+    # Acquisizione posizione neutra (appena arrivato sul nodo)
     depth_images, segmentation_images, angles, poses = imageAcquisition(m, d, depth_images, segmentation_images, angles,
                                                                         poses)
 
+    # Rotazione in PITCH (chiamando qui secondRot si effettua  la rotazione con yaw = 0 (posizione neutra))
+    depth_images, segmentation_images, angles, poses = secondRot(m, d, viewer, pitch_step, pitch_rot, or0, tr, tR,
+                                                                 depth_images, segmentation_images, angles, poses)
+    depth_images, segmentation_images, angles, poses = secondRot(m, d, viewer, -pitch_step, -pitch_rot, or0, tr, tR,
+                                                                 depth_images, segmentation_images, angles, poses)
+
     # ROTAZIONI
     depth_images, segmentation_images, angles, poses = firstRot(m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot,
-                                                                or0, tr, tR, depth_images,
-                                                                segmentation_images, angles, poses)
-    depth_images, segmentation_images, angles, poses = firstRot(m, d, viewer, -yaw_step, -yaw_rot, pitch_step, pitch_rot,
-                                                                or0, tr, tR, depth_images,
-                                                                segmentation_images, angles, poses)
+                                                                or0, tr, tR, depth_images, segmentation_images, angles,
+                                                                poses)
+    depth_images, segmentation_images, angles, poses = firstRot(m, d, viewer, -yaw_step, -yaw_rot, pitch_step,
+                                                                pitch_rot,
+                                                                or0, tr, tR, depth_images, segmentation_images, angles,
+                                                                poses)
 
     # TRASLAZIONE
     pos0 = nextPose
     nextPose = griglia[f"cella_{i}_{j}_{k}"]
     posStep(m, d, viewer, pos0, nextPose, t1)
-    T = t1
 
     # Movimento lungo X, Y e Z
     if j % 2 == 0:                                  # riga pari
@@ -118,7 +125,6 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
                 k += 1
                 i = 0
                 j = 0
-                T = tz
     else:                                           # riga dispari
         if i == 0 and j != len_G - 1:             # incrementa riga se non sono all'ultima riga
             j += 1
@@ -129,10 +135,11 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
                 k += 1
                 i = 0
                 j = 0
-                T = tz
 
 np.savez('immaginiDepth.npz', depth_images)
 np.savez('immaginiSegmentate.npz', segmentation_images)
 
 saveLabels(angles, poses)
+
+print("Tutto BENE")
 

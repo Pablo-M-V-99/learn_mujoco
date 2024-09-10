@@ -1,14 +1,14 @@
 import json
 
 
-def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimCella, offX, offY, offZ):
+def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimNodo, offX, offY, offZ):
     """
     Genera la griglia cartesiana con il primo nodo nell'origine (0, 0, 0). Gli offset servono a spostare la posizione
     iniziale del primo nodo. Ciascun nodo corrisponde ad una posizione lungo la traiettoria da seguire.
     :param lunghezzaGriglia: numero di nodi della griglia lungo Y
     :param larghezzaGriglia: numero di nodi della griglia lungo X
     :param altezzaGriglia: numero di nodi della griglia lungo Z
-    :param dimCella: distanza fra due nodi adiacenti
+    :param dimNodo: distanza fra due nodi adiacenti
     :param offX: offset lungo X
     :param offY: offset lungo Y
     :param offZ: offset lungo Z
@@ -20,7 +20,7 @@ def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimCel
         for j in range(lunghezzaGriglia):
             for i in range(larghezzaGriglia):
                 chiave = f"cella_{i}_{j}_{k}"
-                valore = [i * dimCella - offX, j * dimCella - offY, k * dimCella - offZ]     # coordinate spaziali della cella
+                valore = [i * dimNodo - offX, j * dimNodo - offY, k * dimNodo - offZ]     # coordinate spaziali della cella
                 griglia[chiave] = valore
 
     percorso_file = f"griglia_{i+1}x{j+1}x{k+1}.json"
@@ -42,7 +42,6 @@ def creazioneGrigliaRadiale():
         grigliaRad[chiave] = valore
 
     percorso_file = f"grigliaRadiale.json"
-
     with open(percorso_file, "w") as file:
         json.dump(grigliaRad, file, indent=2)
 

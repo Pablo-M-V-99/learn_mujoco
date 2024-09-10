@@ -34,15 +34,14 @@ def angleStep(m, d, viewer, or0, nextOr, tr):
     :param or0: orientamento all'inizio del movimento
     :param nextOr: orientamento al termine del movimento
     :param tr: durata del movimento
-    :return: l'orientamento al termine del movimento (roll, pitch, yaw) e la prossima posa (nextOr)
     """
     t = 0
     timeStep = m.opt.timestep  # mujoco simulation timestep
 
     while t <= tr:
-        yaw = move(or0[2], nextOr[2], t, tr)
-        pitch = move(or0[1], nextOr[1], t, tr)
         roll = move(or0[0], nextOr[0], t, tr)
+        pitch = move(or0[1], nextOr[1], t, tr)
+        yaw = move(or0[2], nextOr[2], t, tr)
         orientation = R.from_euler('xyz', [roll, pitch, yaw], degrees=True)
         if t >= tr - 2 * timeStep:  # memorizzazione ultima posa per il controllo velocità
             prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(d.flexvert_xpos.shape[0])])
@@ -52,7 +51,6 @@ def angleStep(m, d, viewer, or0, nextOr, tr):
             viewer.sync()
         t += timeStep
     speedCtrl(m, d, viewer, prevPose)
-    return roll, pitch, yaw, nextOr
 
 
 def posStep(m, d, viewer, pos0, nextPose, T):
@@ -75,6 +73,37 @@ def posStep(m, d, viewer, pos0, nextPose, T):
         if t >= T - 2 * timeStep:   # memorizzazione ultima posa per il controllo velocità
             prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(d.flexvert_xpos.shape[0])])
         d.mocap_pos[1] = np.array([x, y, z])
+        mujoco.mj_step(m, d)
+        if viewer:
+            viewer.sync()
+        t += timeStep
+    speedCtrl(m, d, viewer, prevPose)
+
+def moveStep(m, d, viewer, pose0, nextPose, T, flag):
+    """
+    Esegue il movimento per spostarsi alla posizione successiva (della griglia cartesiana).
+
+    :param m: Mujoco model
+    :param d: Mujoco data
+    :param viewer: viewer per consenteri la sincronizzazione del viewer
+    :param pose0: posa all'inizio del movimento
+    :param nextPose: posa al termine del movimento
+    :param T: durata del movimento
+    :param flag: stabilisce se il corpo ruota o trasla
+    """
+    t = 0
+    timeStep = m.opt.timestep  # mujoco simulation timestep
+    while t <= T:
+        move1 = move(pose0[0], nextPose[0], t, T)   # roll se ROTATE, x se TRANSLATE
+        move2 = move(pose0[1], nextPose[1], t, T)   # pitch se ROTATE, y se TRANSLATE
+        move3 = move(pose0[2], nextPose[2], t, T)   # yaw se ROTATE, z se TRANSLATE
+        if t >= T - 2 * timeStep:   # memorizzazione ultima posa per il controllo velocità
+            prevPose = np.array([d.body(f"flag_{ii}").xpos for ii in range(d.flexvert_xpos.shape[0])])
+        if flag == 'ROTATE':
+            orientation = R.from_euler('xyz', [move1, move2, move3], degrees=True)
+            d.mocap_quat[1] = np.array(orientation.as_quat(scalar_first=True))
+        if flag == 'TRANSLATE':
+            d.mocap_pos[1] = np.array([move1, move2, move3])
         mujoco.mj_step(m, d)
         if viewer:
             viewer.sync()

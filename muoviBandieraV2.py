@@ -25,24 +25,24 @@ mass = 0.2
 radius = 0.001
 damping = 0.001
 poisson = 0
-young = 1e6
+young = 1000
 thickness = 1e-2
 pos = [0, 0, 1.5]
 dimension = [9, 19, 1]
 spacing = [0.05, 0.05, 0.05]
-posizione_manoDx = generaNumeroCasuale(15, 90, True)/100
-posizione_manoSx = generaNumeroCasuale(15, 90, True)/100
+posizione_manoDx = generaNumeroCasuale(30, 100, True)/100
+posizione_manoSx = generaNumeroCasuale(30, 100, True)/100
 
 # Parametri GRIGLIA
 len_G = 2           # numero di nodi lungo Y
 wid_G = 2           # numero di nodi lungo X
 height_G = 2        # numero di nodi lungo Z
-dimCell = 0.05      # distanza fra due nodi adiacenti (cm)
-offX, offY, offZ = 0, 0.5, 0 - pos[2]      # offset per l'allineamento della griglia (cm)
+dimCell = 0.05      # distanza fra due nodi adiacenti
+offX, offY, offZ = 0, 0, 0 - pos[2]      # offset per l'allineamento della griglia
 
 # Parametri ROTAZIONE
-pitch_rot, yaw_rot = 15, 20         # la rotazione deve essere divisibile per gli incrementi!
-pitch_step, yaw_step = 15, 20       # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
+pitch_rot, yaw_rot = 20, 36         # la rotazione deve essere divisibile per gli incrementi!
+pitch_step, yaw_step = 10, 12       # il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
                                     # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
 view = True
@@ -132,6 +132,7 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
     depth_images, segmentation_images, angles, poses = imageAcquisition(m, d, depth_images, segmentation_images, angles,
                                                                         poses)
 
+
     # ROTAZIONI
     depth_images, segmentation_images, angles, poses = firstRot(m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot,
                                                                 or0, tr, tR, depth_images, segmentation_images, angles,
@@ -144,7 +145,7 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
     pos0 = nextPose
     nextPose = griglia[f"cella_{i}_{j}_{k}"]
     posStep(m, d, viewer, pos0, nextPose, t1)
-    T = t1
+    # T = t1
 
     # Movimento lungo X, Y e Z
     if j % 2 == 0:                                  # riga pari
@@ -157,7 +158,7 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
                 k += 1
                 i = 0
                 j = 0
-                T = tz
+                # T = tz
     else:                                           # riga dispari
         if i == 0 and j != len_G - 1:             # incrementa riga se non sono all'ultima riga
             j += 1
@@ -168,10 +169,11 @@ while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1:
                 k += 1
                 i = 0
                 j = 0
-                T = tz
+                # T = tz
 
 np.savez('immaginiDepth.npz', depth_images)
 np.savez('immaginiSegmentate.npz', segmentation_images)
 
 saveLabels(angles, poses)
 
+print("Tutto BENE")

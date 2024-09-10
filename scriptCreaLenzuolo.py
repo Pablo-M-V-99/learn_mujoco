@@ -1,6 +1,5 @@
 import xml.etree.ElementTree as ET
 from typing import List
-
 import numpy as np
 
 
@@ -105,6 +104,7 @@ def lenzuolo_maker(root_xml: ET.Element,
     flexcomp_element= ET.SubElement(pin_element, 'flexcomp',
                           attrib={'name': 'flag',
                                   'type': 'grid',
+                                  'dim': '2',
                                   'count': f'{dimension[0]} {dimension[1]} {dimension[2]}',
                                   'spacing': f'{spacing[0]} {spacing[1]} {spacing[2]}',
                                   'mass': f'{mass}',
@@ -227,3 +227,7 @@ def connect_maker(root_xml: ET.Element,
     #                       'anchor': '0 0 0'})
 
     return root_xml
+
+
+if __name__ == "__main__":
+    print("Questo script non deve essere eseguito autonomamente.")

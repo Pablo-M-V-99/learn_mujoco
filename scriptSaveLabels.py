@@ -1,6 +1,4 @@
 import json
-import numpy as np
-from math import cos, acos, asin, pi
 
 
 def saveLabels(angles, poses):
@@ -16,10 +14,8 @@ def saveLabels(angles, poses):
     dizionario[chiave] = valore
 
     percorso_file = f"labels.json"
-
     with open(percorso_file, "w") as file:
         json.dump(dizionario, file, indent=2)
-
 
 
 if __name__ == "__main__":

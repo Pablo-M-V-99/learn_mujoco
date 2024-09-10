@@ -6,8 +6,8 @@ def speedCtrl(m, d, viewer, prevPose)-> bool:
     Verifica che tutti i punti del corpo siano fermi o con velocità inferiori ad un valore soglia
     :param m: Mujoco model
     :param d: Mujoco Data
-    :param viewer: Mujoco Viewer
-    :param prevPose: dati dell'istante precedente
+    :param viewer: consente la sincronizzazione del viewer
+    :param prevPose: posa all'istante precedente
     :return:
     """
     counter = 0
@@ -23,7 +23,7 @@ def speedCtrl(m, d, viewer, prevPose)-> bool:
 
         if max_speed > speed_threshold:
             counter += 1
-            print(f"Sono stato fermo {counter/2} secondi")
+            # print(f"Sono stato fermo {counter/2} secondi")
             while t <= 0.5:
                 mujoco.mj_step(m, d)
                 if viewer:
