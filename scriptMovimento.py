@@ -1,4 +1,3 @@
-from scriptTraiettoria import moveStep
 from scriptControlloVelocità import speedCtrl
 from scriptImageAcquisition import imageAcquisition
 from scipy.spatial.transform import Rotation as R
