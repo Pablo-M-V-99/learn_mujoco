@@ -18,6 +18,7 @@ def lenzuolo_maker(root_xml: ET.Element,
 
     """
     Aggiunge il worldbody e tutti i body
+
     :param root_xml:
     :param mass: massa del lenzuolo
     :param radius: raggio della particella
@@ -32,6 +33,7 @@ def lenzuolo_maker(root_xml: ET.Element,
     :param posizione_manoSx: posizione della mano sinistra espressa in percentuale (0 è al centro, 1 è al lembo)
     :return:
     """
+
     worldbody = root_xml.find('worldbody')
     if worldbody is None:
         worldbody = ET.SubElement(root_xml, 'worldbody')
@@ -55,24 +57,24 @@ def lenzuolo_maker(root_xml: ET.Element,
                                       'pos': f'0 '
                                              f'{-(dimension[1] - 1) * spacing[1] / 2} '
                                              f'{pos[2]}'})
-    ET.SubElement(sferaCentrale_element, 'site',
-                  attrib={'name': "Z_0",
-                          'pos': '0 0 0.075',
-                          'size': '0.003 0.003 0.1',
-                          'type': 'box',
-                          'rgba': '0 0 1 1'})
-    ET.SubElement(sferaCentrale_element, 'site',
-                  attrib={'name': "Y_0",
-                          'pos': '0 0.075 0',
-                          'size': '0.003 0.1 0.003',
-                          'type': 'box',
-                          'rgba': '0 1 0 1'})
-    ET.SubElement(sferaCentrale_element, 'site',
-                  attrib={'name': "X_0",
-                          'pos': '0.075 0 0',
-                          'size': '0.1 0.003 0.003',
-                          'type': 'box',
-                          'rgba': '1 0 0 1'})
+    # ET.SubElement(sferaCentrale_element, 'site',
+    #               attrib={'name': "Z_0",
+    #                       'pos': '0 0 0.075',
+    #                       'size': '0.003 0.003 0.1',
+    #                       'type': 'box',
+    #                       'rgba': '0 0 1 1'})
+    # ET.SubElement(sferaCentrale_element, 'site',
+    #               attrib={'name': "Y_0",
+    #                       'pos': '0 0.075 0',
+    #                       'size': '0.003 0.1 0.003',
+    #                       'type': 'box',
+    #                       'rgba': '0 1 0 1'})
+    # ET.SubElement(sferaCentrale_element, 'site',
+    #               attrib={'name': "X_0",
+    #                       'pos': '0.075 0 0',
+    #                       'size': '0.1 0.003 0.003',
+    #                       'type': 'box',
+    #                       'rgba': '1 0 0 1'})
     # CAMERA
     ET.SubElement(sferaCentrale_element, 'camera',
                   attrib={'name': 'azure_kinect',
@@ -141,6 +143,7 @@ def connect_maker(root_xml: ET.Element,
                   posizione_manoSx: float):
     """
     Aggiunge i connect lato robot e lato uomo
+
     :param root_xml:
     :param dimension: numero di nodi nelle tre dimensioni
     :param spacing: distanza fra due nodi adiacenti nelle tre dimensioni
