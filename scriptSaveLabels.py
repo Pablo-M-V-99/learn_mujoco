@@ -19,8 +19,8 @@ def saveLabels(angles, poses, folder):
         json.dump(dizionario, file, indent=2)
 
 
-def saveParameters(mass, radius, damping, poisson, young, thickness, pos, dimension, spacing, posizione_manoDx,
-                   posizione_manoSx, seed, folder):
+def saveParameters(mass, radius, damping, poisson, young, thickness, spacing, dimension, posizione_manoDx,
+                   posizione_manoSx, folder):
 
     dizionario = {}  # dizionario vuoto
     valore = []
@@ -31,12 +31,10 @@ def saveParameters(mass, radius, damping, poisson, young, thickness, pos, dimens
     dizionario["poisson"] = poisson
     dizionario["young"] = young
     dizionario["thickness"] = thickness
-    dizionario["pos"] = pos
-    dizionario["dimension"] = dimension
     dizionario["spacing"] = spacing
+    dizionario["dimension"] = dimension
     dizionario["posizione_manoDx"] = posizione_manoDx
     dizionario["posizione_manoSx"] = posizione_manoSx
-    dizionario["seed"] = seed
 
     percorso_file = f"{folder}/parameters.json"
     with open(percorso_file, "w") as file:

@@ -20,7 +20,7 @@ def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimNod
         for j in range(lunghezzaGriglia):
             for i in range(larghezzaGriglia):
                 chiave = f"cella_{i}_{j}_{k}"
-                valore = [i * dimNodo - offX, j * dimNodo - offY, k * dimNodo - offZ]     # coordinate spaziali della cella
+                valore = [i * dimNodo + offX, j * dimNodo + offY, k * dimNodo + offZ]     # coordinate spaziali della cella
                 griglia[chiave] = valore
 
     percorso_file = f"griglia_{i+1}x{j+1}x{k+1}.json"

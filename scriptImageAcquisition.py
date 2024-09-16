@@ -4,20 +4,20 @@ from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 
-def imageAcquisition(m, d, depth_images, seg_images, angles, poses, plot):
+def imageAcquisition(m, d, depth_images, angles, poses, plot):
     """
     Salva in vettori distinti le immagini depth, le immagini segmentate, il vettore di traslazione da terna human a
     terna TCP e gli angoli di rotazione della matrice di trasformazione omogenea riferita alla terna human della terna
-    TCP. Alla fine del codice è  possibile attivare la visualizzazione del plot
+    TCP. Alla fine del codice è possibile attivare la visualizzazione del plot
 
-    :param m: Mujoco model
-    :param d: Mujoco data
-    :param depth_images: vettore di immagini depth
+    :param m: Mujoco model.
+    :param d: Mujoco data.
+    :param depth_images: Vettore di immagini depth
     :param seg_images: vettore di immagini segmentate
     :param angles: vettore degli angoli di rotazione (da human a TCP)
     :param poses: vettore traslazione (da human a TCP)
-    :param plot: variabile bool per attivare il plot (se TRUE)
-    :return: I vettori di immagini depth, di immagini segmentate, angoli e posizioni
+    :param plot: variabile bool per attivare il plot (se TRUE).
+    :return: I vettori di immagini depth, di immagini segmentate, angoli e posizioni.
     """
 
     # Image Resolution
@@ -38,13 +38,13 @@ def imageAcquisition(m, d, depth_images, seg_images, angles, poses, plot):
         renderer.enable_depth_rendering()
         renderer.update_scene(d, camera='azure_kinect')
         depth_plane = renderer.render()                 # depth is a float array, in meters
-        depth_plane[depth_plane > 5] = np.nan
+        depth_plane[depth_plane > 5] = 0
         renderer.disable_depth_rendering()
         i_indices, j_indices = np.meshgrid(np.arange(width), np.arange(height), indexing='ij')
         x_camera = (i_indices - cx) * depth_plane / fx
         y_camera = (j_indices - cy) * depth_plane / fy
-        depth = np.sqrt(depth_plane ** 2 + x_camera ** 2 + y_camera ** 2)
-        depth_images.append(depth)
+        depth_frame = np.sqrt(depth_plane ** 2 + x_camera ** 2 + y_camera ** 2)
+        depth_images.append(depth_frame)
 
     # SEGMENTATION
     with mujoco.Renderer(m, height, width) as renderer:
@@ -52,7 +52,10 @@ def imageAcquisition(m, d, depth_images, seg_images, angles, poses, plot):
         renderer.update_scene(d, camera='azure_kinect')
         seg_frame = renderer.render()
         renderer.disable_segmentation_rendering()
-        seg_images.append(seg_frame[:, :, 0])
+        seg_frame = seg_frame[:, :, 0] + 1
+
+    # Applicazione della maschera segmentata all'immagine depth
+    depth_frame = depth_frame * seg_frame
 
     # manipolazione angoli per Giorgio
     angoli_TCP = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True).as_euler('xyz', degrees=True)
@@ -100,11 +103,11 @@ def imageAcquisition(m, d, depth_images, seg_images, angles, poses, plot):
     # PLOT
     if plot:
         _, ax = plt.subplots(ncols=2)
-        ax[0].imshow(depth)
+        ax[0].imshow(depth_frame)
         ax[1].imshow(seg_frame[:, :, 0])
         plt.show()
 
-    return depth_images, seg_images, angles, poses
+    return depth_images, angles, poses
 
 
 if __name__ == "__main__":

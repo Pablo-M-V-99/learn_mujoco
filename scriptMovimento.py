@@ -31,7 +31,7 @@ def moveToNext(m, d, viewer, pose0, nextPose, T, flag):
 
     :param m: Mujoco model
     :param d: Mujoco data
-    :param viewer: viewer per consenteri la sincronizzazione del viewer
+    :param viewer: consente la sincronizzazione del viewer
     :param pose0: posa all'inizio del movimento
     :param nextPose: posa al termine del movimento
     :param T: durata del movimento
@@ -58,30 +58,29 @@ def moveToNext(m, d, viewer, pose0, nextPose, T, flag):
     speedCtrl(m, d, viewer, prevPose)
 
 
-def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, nextPose,
-          tr, T, plot, depth_images, seg_images, angles, poses, list, list_s):
+def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, nextPose, tr, T, plot, depth_images, angles,
+         poses, list, list_s):
     """
     Effettua traslazione e rotazione
 
-    :param m: Mujoco model
-    :param d: Mujoco data
-    :param viewer: consente la sincronizzazione del viewer
-    :param first_step: Valore dell'incremento della prima rotazione
-    :param first_rot: Ampiezza della prima rotazione
-    :param sec_step: Valore dell'incremento della seconda rotazione
-    :param sec_rot: Ampiezza della seconda rotazione
-    :param or0: Orientamento all'inizio del movimento
-    :param pos0: Posizione all'inizio della traslazione
-    :param nextPose: Posizione al terminine della traslazione
-    :param tr: durata della rotazione
-    :param T: durata della traslazione
-    :param plot: consente la visualizzazione dei plot
-    :param depth_images: vettore di immagini depth
-    :param seg_images: vettore di immagini segmentate
+    :param m: Mujoco model.
+    :param d: Mujoco data.
+    :param viewer: Consente la sincronizzazione del viewer.
+    :param first_step: Valore dell'incremento della prima rotazione.
+    :param first_rot: Ampiezza della prima rotazione.
+    :param sec_step: Valore dell'incremento della seconda rotazione.
+    :param sec_rot: Ampiezza della seconda rotazione.
+    :param or0: Orientamento all'inizio del movimento.
+    :param pos0: Posizione all'inizio della traslazione.
+    :param nextPose: Posizione al termine della traslazione.
+    :param tr: Durata della rotazione.
+    :param T: Durata della traslazione.
+    :param plot: Consente la visualizzazione dei plot.
+    :param depth_images: Vettore di immagini depth
     :param angles: vettore degli angoli di rotazione (da human a TCP)
     :param poses: vettore traslazione (da human a TCP)
     :param list: lista di tutte le configurazioni
-    :param list_s: lista delle configurazioni da campionnare
+    :param list_s: lista delle configurazioni da campionare
     :return:
     """
 
@@ -92,7 +91,7 @@ def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, next
             # roll = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True).as_euler('xyz', degrees=True)[0]
             nextOr = [0, qq, q]
             if list[0] in list_s:
-                if not(np.array_equal(pos0, nextPose)):
+                if not (np.array_equal(pos0, nextPose)):
                     moveToNext(m, d, viewer, pos0, nextPose, T, 'TRANSLATE')
                     pos0 = nextPose
                     # print("Ho traslato")
@@ -102,7 +101,6 @@ def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, next
                 # print(f"yaw: {or0[2]}, pitch: {or0[1]}, roll: {or0[0]}")
 
                 # Acquisizione
-                depth_images, seg_images, angles, poses = imageAcquisition(m, d, depth_images, seg_images, angles,
-                                                                           poses, plot)
+                depth_images, angles, poses = imageAcquisition(m, d, depth_images, angles, poses, plot)
             list.pop(0)
-    return or0,pos0, depth_images, seg_images, angles, poses
+    return or0, pos0, depth_images, angles, poses

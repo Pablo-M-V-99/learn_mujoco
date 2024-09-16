@@ -21,6 +21,9 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # plot = True
     plot = False
 
+    # Attivare il SEED
+    random.seed(seed)
+
     # Parametri TEMPO
     t1 = 5          # durata movimento da un punto della griglia all'altro
     tz = 7          # durata cambio piano
@@ -28,17 +31,19 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     T = t1          # T è una variabile di appoggio per alternare tra il tempo di cambio piano e quello di traslazione
 
     # Parametri XML
-    mass = random.uniform(massa * 0.9, massa * 1.1)
+    mass = round(random.uniform(massa * 0.9, massa * 1.1), 3)
     radius = 0.001
-    damping = random.uniform(smorzamento * 0.9 ,smorzamento * 1.1)
-    poisson = random.uniform(0, mod_Poisson)
-    young = random.uniform(mod_Young * 0.9, mod_Young * 1.1)
-    thickness = 1e-2
-    pos = [0, 0, 1.5]
-    dimension = [9, 19, 1]
-    spacing = [0.05, 0.05, 0.05]
-    posizione_manoDx = random.randint(30, 100)/100
-    posizione_manoSx = random.randint(30, 100)/100
+    damping = round(random.uniform(smorzamento * 0.9 ,smorzamento * 1.1), 4)
+    poisson = round(random.uniform(0, mod_Poisson), 4)
+    young = round(random.uniform(mod_Young * 0.9, mod_Young * 1.1), 1)
+    thickness = round(random.uniform(0.001, 0.004), 3)
+    larghezza_ply = round(random.uniform(0.35, 0.80), 2)
+    lunghezza_ply = round(random.uniform(0.70, 1.2), 2)
+    spacing = [round(random.uniform(0.01, 0.05), 2), round(random.uniform(0.01, 0.05), 2), 0.05]
+    pos = [0, 0, 0]
+    dimension = [int(larghezza_ply / spacing[0]) + 1, int(lunghezza_ply / spacing[1]) + 1, 1]
+    posizione_manoDx = round(random.uniform(0.5, 1), 3)
+    posizione_manoSx = round(random.uniform(0.5, 1), 3)
 
     # Parametri GRIGLIA
     total_length = 0.3
@@ -46,7 +51,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     wid_G = int(total_length//dimCell + 1)           # numero di nodi lungo X
     len_G = int(total_length//dimCell +1)            # numero di nodi lungo Y
     height_G = int(total_length//dimCell + 1)        # numero di nodi lungo Z
-    offX, offY, offZ = 0, 0, 0 - pos[2]              # offset per l'allineamento della griglia
+    offX, offY, offZ = 0, -(dimension[1] - 1) * spacing[1] / 2, 0              # offset per l'allineamento della griglia
 
     # Parametri ROTAZIONE
     pitch_rot, yaw_rot = 20, 60         # Il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
@@ -61,7 +66,6 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # GENERA LISTA CONFIGURAZIONI
     lista_configurazioni = [ii for ii in range(c_tot)]
     lista_campionata = []
-    random.seed(seed)
     ii = 0
     while ii < sampling:
         ii += 1
@@ -77,7 +81,6 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
 
     # creazione vettori per append
     depth_images = []
-    segmentation_images = []
     angles = []
     poses = []
 
@@ -147,10 +150,9 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
             pos0 = nextPose
 
         # Movimento (traslazione + rotazione)
-        or0, pos0, depth_images, segmentation_images, angles, poses = move(m, d, viewer, yaw_step, yaw_rot, pitch_step,
-                                                                            pitch_rot, or0, pos0, nextPose, tr, T, plot,
-                                                                            depth_images, segmentation_images, angles,
-                                                                            poses, lista_configurazioni, lista_campionata)
+        or0, pos0, depth_images, angles, poses = move(m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot, or0, pos0,
+                                                      nextPose, tr, T, plot, depth_images, angles, poses,
+                                                      lista_configurazioni, lista_campionata)
 
         # Determinzazione del prossimo nodo verso cui traslare
         nextPose = griglia[f"cella_{i}_{j}_{k}"]
@@ -187,14 +189,13 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     folder_name = f"dati_{current_time}"
     os.makedirs(folder_name, exist_ok=True)  # Crea la cartella (exist_ok=True evita errori se esiste già)
 
-    np.savez(f"{folder_name}/immaginiDepth.npz", depth_images)
-    np.savez(f"{folder_name}/immaginiSegmentate.npz", segmentation_images)
+    np.savez(f"{folder_name}/immaginiDepth.npz", depth_images = depth_images, angles = angles, poses = poses)
 
-    saveLabels(angles, poses, folder_name)
-    saveParameters(mass, radius, damping, poisson, young, thickness, pos, dimension, spacing, posizione_manoDx,
-                   posizione_manoSx, seed, folder_name)
+    # saveLabels(angles, poses, folder_name)
+    saveParameters(mass, radius, damping, poisson, young, thickness, spacing, dimension, posizione_manoDx,
+                   posizione_manoSx, folder_name)
 
-    print("Tutto BENE")
+    # print("Tutto BENE")
 
 if __name__ == '__main__':
-    main(0.2, 0.001, 0.001, 1000, 42, 10)
+    main(0.2, 0.1, 0.5, 1000, 2, 10)
