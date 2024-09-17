@@ -25,9 +25,9 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     random.seed(seed)
 
     # Parametri TEMPO
-    t1 = 5          # durata movimento da un punto della griglia all'altro
+    t1 = 7          # durata movimento da un punto della griglia all'altro
     tz = 7          # durata cambio piano
-    tr = 5          # durata rotazione
+    tr = 7          # durata rotazione
     T = t1          # T è una variabile di appoggio per alternare tra il tempo di cambio piano e quello di traslazione
 
     # Parametri XML
@@ -38,7 +38,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     young = round(random.uniform(mod_Young * 0.9, mod_Young * 1.1), 1)
     thickness = round(random.uniform(0.001, 0.004), 3)
     larghezza_ply = round(random.uniform(0.35, 0.80), 2)
-    lunghezza_ply = round(random.uniform(0.70, 1.2), 2)
+    lunghezza_ply = round(random.uniform(0.70, 1), 2)
     spacing = [round(random.uniform(0.01, 0.05), 2), round(random.uniform(0.01, 0.05), 2), 0.05]
     pos = [0, 0, 0]
     dimension = [int(larghezza_ply / spacing[0]) + 1, int(lunghezza_ply / spacing[1]) + 1, 1]
@@ -47,10 +47,10 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
 
     # Parametri GRIGLIA
     total_length = 0.3
-    dimCell = 0.1                                    # distanza fra due nodi adiacenti
-    wid_G = int(total_length//dimCell + 1)           # numero di nodi lungo X
-    len_G = int(total_length//dimCell +1)            # numero di nodi lungo Y
-    height_G = int(total_length//dimCell + 1)        # numero di nodi lungo Z
+    dimCell = 0.1                                     # distanza fra due nodi adiacenti
+    wid_G = int(total_length / dimCell + 1)           # numero di nodi lungo X
+    len_G = int(total_length / dimCell +1)            # numero di nodi lungo Y
+    height_G = int(total_length / dimCell + 1)        # numero di nodi lungo Z
     offX, offY, offZ = 0, -(dimension[1] - 1) * spacing[1] / 2, 0              # offset per l'allineamento della griglia
 
     # Parametri ROTAZIONE
@@ -186,10 +186,10 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Crea la cartella con il timestamp
-    folder_name = f"dati_{current_time}"
+    folder_name = f"datasets/dati_{current_time}"
     os.makedirs(folder_name, exist_ok=True)  # Crea la cartella (exist_ok=True evita errori se esiste già)
 
-    np.savez(f"{folder_name}/immaginiDepth.npz", depth_images = depth_images, angles = angles, poses = poses)
+    np.savez(f"{folder_name}/depth_and_labels.npz", depth_images = depth_images, angles = angles, poses = poses)
 
     # saveLabels(angles, poses, folder_name)
     saveParameters(mass, radius, damping, poisson, young, thickness, spacing, dimension, posizione_manoDx,
