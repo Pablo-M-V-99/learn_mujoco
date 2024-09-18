@@ -3,7 +3,7 @@ import numpy as np
 
 def speedCtrl(m, d, viewer, prevPose)-> bool:
     """
-    Verifica che tutti i punti del corpo siano fermi o con velocità inferiori ad un valore soglia
+    Verifica che tutti i punti del corpo siano fermi o con velocità inferiori a un valore soglia
     :param m: Mujoco model
     :param d: Mujoco Data
     :param viewer: consente la sincronizzazione del viewer
@@ -11,8 +11,8 @@ def speedCtrl(m, d, viewer, prevPose)-> bool:
     :return:
     """
     counter = 0
-    max_counter = 10
-    speed_threshold = 0.02
+    max_counter = 5
+    speed_threshold = 0.05  # [m/s]
     timeStep = m.opt.timestep  # mujoco simulation timestep
 
     while True:
@@ -24,7 +24,7 @@ def speedCtrl(m, d, viewer, prevPose)-> bool:
         if max_speed > speed_threshold:
             counter += 1
             # print(f"Sono stato fermo {counter/2} secondi")
-            while t <= 0.5:
+            while t <= 1:
                 mujoco.mj_step(m, d)
                 if viewer:
                     viewer.sync()
@@ -33,8 +33,9 @@ def speedCtrl(m, d, viewer, prevPose)-> bool:
             return True
 
         if counter > max_counter:
-            print(f"Il counter ha superato il valore soglia. Corpo non fermo")
+            print(f"ERROR: max speed = {max_speed} > {speed_threshold}")
             return False
+
 
 if __name__ == "__main__":
     print("Questo script non deve essere eseguito autonomamente.")

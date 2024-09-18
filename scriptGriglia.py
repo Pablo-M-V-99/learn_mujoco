@@ -1,17 +1,17 @@
 import json
 
 
-def creazioneGriglia(lunghezzaGriglia, larghezzaGriglia, altezzaGriglia,  dimNodo, offX, offY, offZ):
+def creazioneGriglia(larghezzaGriglia, lunghezzaGriglia, altezzaGriglia,  dimNodo, offX, offY, offZ):
     """
     Genera la griglia cartesiana con il primo nodo nell'origine (0, 0, 0). Gli offset servono a spostare la posizione
     iniziale del primo nodo. Ciascun nodo corrisponde ad una posizione lungo la traiettoria da seguire.
-    :param lunghezzaGriglia: numero di nodi della griglia lungo Y
     :param larghezzaGriglia: numero di nodi della griglia lungo X
+    :param lunghezzaGriglia: numero di nodi della griglia lungo Y
     :param altezzaGriglia: numero di nodi della griglia lungo Z
     :param dimNodo: distanza fra due nodi adiacenti
-    :param offX: offset lungo X
-    :param offY: offset lungo Y
-    :param offZ: offset lungo Z
+    :param offX: offset lungo X [m]
+    :param offY: offset lungo Y [m]
+    :param offZ: offset lungo Z [m]
     """
 
     griglia = {}  # dizionario vuoto

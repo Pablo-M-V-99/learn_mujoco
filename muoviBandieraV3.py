@@ -25,10 +25,10 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # random.seed(seed)
 
     # Parametri TEMPO
-    t1 = 10          # durata movimento da un punto della griglia all'altro
+    t1 = 5           # durata movimento da un punto della griglia all'altro
     tz = 10          # durata cambio piano
     tr = 10          # durata rotazione
-    T = t1          # T è una variabile di appoggio per alternare tra il tempo di cambio piano e quello di traslazione
+    T = t1           # T è una variabile di appoggio per alternare tra il tempo di cambio piano e quello di traslazione
 
     # Parametri XML
     mass = round(random.uniform(massa * 0.9, massa * 1.1), 3)
@@ -38,20 +38,22 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     young = round(random.uniform(mod_Young * 0.9, mod_Young * 1.1), 1)
     thickness = round(random.uniform(0.001, 0.004), 3)
     larghezza_ply = round(random.uniform(0.35, 0.80), 2)
-    lunghezza_ply = round(random.uniform(0.70, 1), 2)
-    spacing = [round(random.uniform(0.02, 0.05), 2), round(random.uniform(0.02, 0.05), 2), 0.05]
+    lunghezza_ply = round(random.uniform(0.70, 1.2), 2)
+    spacing = [round(random.uniform(0.01, 0.03), 2), round(random.uniform(0.01, 0.05), 2), 0.05]
     pos = [0, 0, 0]
     dimension = [int(larghezza_ply / spacing[0]) + 1, int(lunghezza_ply / spacing[1]) + 1, 1]
     posizione_manoDx = round(random.uniform(0.5, 1), 3)
     posizione_manoSx = round(random.uniform(0.5, 1), 3)
 
     # Parametri GRIGLIA
-    total_length = 0.3
-    dimCell = 0.1                                     # distanza fra due nodi adiacenti
-    wid_G = int(total_length / dimCell + 1)           # numero di nodi lungo X
-    len_G = int(total_length / dimCell +1)            # numero di nodi lungo Y
-    height_G = int(total_length / dimCell + 1)        # numero di nodi lungo Z
-    offX, offY, offZ = 0, -(dimension[1] - 1) * spacing[1] / 2, 0              # offset per l'allineamento della griglia
+    wid_G = 0.3                         # larghezza griglia (X)
+    len_G = 0.3                         # lunghezza grglia (Y)
+    height_G = 0.3                      # altezza griglia (Z)
+    dimCell = 0.1                            # distanza fra due nodi adiacenti
+    X_G = int(wid_G / dimCell + 1)           # numero di nodi lungo X
+    Y_G = int(len_G / dimCell +1)            # numero di nodi lungo Y
+    Z_G = int(height_G / dimCell + 1)        # numero di nodi lungo Z
+    offX, offY, offZ = -wid_G / 2, 10 - (dimension[1] - 1) * spacing[1] / 2, -height_G / 2    # offset per l'allineamento della griglia
 
     # Parametri ROTAZIONE
     pitch_rot, yaw_rot = 20, 60         # Il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
@@ -60,8 +62,10 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # Calcolo numero di configurazioni
     c_yaw = int(yaw_rot / yaw_step * 2 + 1)            # numero di configurazioni in Yaw per nodo
     c_pitch = int(pitch_rot / pitch_step * 2 + 1)      # numero di configurazioni in Pitch per nodo
-    c_nodi = height_G * wid_G * len_G                   # numero nodi
-    c_tot = c_yaw * c_pitch * c_nodi                    # configurazioni totali
+    c_nodi = Z_G * X_G * Y_G                           # numero nodi
+    c_tot = c_yaw * c_pitch * c_nodi                   # configurazioni totali
+    if c_tot < sampling:
+        return 'ERROR: il numero di pose da campionare è superiore al numero di pose totali'
 
     # GENERA LISTA CONFIGURAZIONI
     lista_configurazioni = [ii for ii in range(c_tot)]
@@ -85,8 +89,8 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     poses = []
 
     # CREAZIONE GRIGLIA CARTESIANA
-    cartesianGrid(len_G, wid_G, height_G, dimCell, offX, offY, offZ)
-    json_path = (f"griglia_{wid_G}x{len_G}x{height_G}.json")
+    cartesianGrid(X_G, Y_G, Z_G, dimCell, offX, offY, offZ)
+    json_path = (f"griglia_{X_G}x{Y_G}x{Z_G}.json")
     with open(json_path, "r") as file:
         griglia = json.load(file)
 
@@ -141,29 +145,31 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
         t += timeStep
         mujoco.mj_step(m, d)
 
+    # Allineamento con la griglia
+    moveToNext(m, d, viewer, pos0, nextPose, 10, 'TRANSLATE')
+    pos0 = nextPose
+
     # MOVIMENTO SU TUTTA LA GRIGLIA
-    while i <= wid_G - 1 and j <= len_G - 1 and k <= height_G - 1 and len(lista_campionata) != 0:
+    while i <= X_G - 1 and j <= Y_G - 1 and k <= Z_G - 1 and len(lista_campionata) != 0:
 
         # Allineamento con la griglia
-        if i == 0 and j == 0 and k == 0:
-            moveToNext(m, d, viewer, pos0, nextPose, 20, 'TRANSLATE')
-            pos0 = nextPose
+        # if i == 0 and j == 0 and k == 0:
+        #     moveToNext(m, d, viewer, pos0, nextPose, 10, 'TRANSLATE')
+        #     pos0 = nextPose
 
         # Movimento (traslazione + rotazione)
         or0, pos0, depth_images, angles, poses = move(m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot, or0, pos0,
                                                       nextPose, tr, T, plot, depth_images, angles, poses,
                                                       lista_configurazioni, lista_campionata)
 
-        # Determinzazione del prossimo nodo verso cui traslare
-        nextPose = griglia[f"cella_{i}_{j}_{k}"]
         T = t1
         # Movimento lungo X, Y e Z (della griglia)
         # i righe, j colonne, k piani
         if j % 2 == 0:                                  # riga pari
-            if i == wid_G - 1 and j != len_G - 1:       # incrementa riga se non sono all'ultima riga
+            if i == X_G - 1 and j != Y_G - 1:       # incrementa riga se non sono all'ultima riga
                 j += 1
             else:
-                if i != wid_G - 1:                      # incrementa colonna se non sono all'ultima colonna
+                if i != X_G - 1:                      # incrementa colonna se non sono all'ultima colonna
                     i += 1
                 else:                                   # incrementa piano se all'ultima colonna e all'ultima riga
                     k += 1
@@ -171,7 +177,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
                     j = 0
                     T = tz
         else:                                           # riga dispari
-            if i == 0 and j != len_G - 1:               # incrementa riga se non sono all'ultima riga
+            if i == 0 and j != Y_G - 1:               # incrementa riga se non sono all'ultima riga
                 j += 1
             else:
                 if i != 0:                              # decrementa colonna se non sono alla prima colonna
@@ -181,6 +187,9 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
                     i = 0
                     j = 0
                     T = tz
+
+        # Determinzazione del prossimo nodo verso cui traslare
+        nextPose = griglia[f"cella_{i}_{j}_{k}"]
 
     # Genera il timestamp corrente
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -198,4 +207,4 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # print("Tutto BENE")
 
 if __name__ == '__main__':
-    main(0.2, 0.1, 0.5, 1000, 2, 250)
+    main(0.2, 0.1, 0.5, 1000, 2, 3000)

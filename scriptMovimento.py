@@ -25,7 +25,7 @@ def compTrajectory(pose0, nextPose, t, T):
     return q
 
 
-def moveToNext(m, d, viewer, pose0, nextPose, T, flag):
+def moveToNext(m, d, viewer, pose0, nextPose, T, flag)-> bool:
     """
     Esegue il movimento per spostarsi alla configurazione successiva
 
@@ -55,7 +55,7 @@ def moveToNext(m, d, viewer, pose0, nextPose, T, flag):
         if viewer:
             viewer.sync()
         t += timeStep
-    speedCtrl(m, d, viewer, prevPose)
+    return speedCtrl(m, d, viewer, prevPose)
 
 
 def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, nextPose, tr, T, plot, depth_images, angles,
@@ -81,26 +81,30 @@ def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, next
     :param poses: vettore traslazione (da human a TCP)
     :param list: lista di tutte le configurazioni
     :param list_s: lista delle configurazioni da campionare
-    :return:
+    :return: se True l'immagine verrà acquisita
     """
 
-    for q in range(-first_rot, first_rot + first_step, first_step):
-        for qq in range(-sec_rot, sec_rot + sec_step, sec_step):
+    for qq in range(-first_rot, first_rot + first_step, first_step):
+        for q in range(-sec_rot, sec_rot + sec_step, sec_step):
             # yaw = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True).as_euler('xyz', degrees=True)[2]
             # pitch = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True).as_euler('xyz', degrees=True)[1]
             # roll = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True).as_euler('xyz', degrees=True)[0]
-            nextOr = [0, qq, q]
+            nextOr = [0, q, qq]
             if list[0] in list_s:
+                list_s.remove(list[0])
+
                 if not (np.array_equal(pos0, nextPose)):
-                    moveToNext(m, d, viewer, pos0, nextPose, T, 'TRANSLATE')
+                    good_pose = moveToNext(m, d, viewer, pos0, nextPose, T, 'TRANSLATE')
                     pos0 = nextPose
                     # print("Ho traslato")
-                list_s.remove(list[0])
-                moveToNext(m, d, viewer, or0, nextOr, tr, 'ROTATE')
-                or0 = nextOr
-                # print(f"yaw: {or0[2]}, pitch: {or0[1]}, roll: {or0[0]}")
 
-                # Acquisizione
-                depth_images, angles, poses = imageAcquisition(m, d, depth_images, angles, poses, plot)
+                if not (np.array_equal(or0, nextOr)):
+                    good_pose = moveToNext(m, d, viewer, or0, nextOr, tr, 'ROTATE')
+                    or0 = nextOr
+                    # print(f"yaw: {or0[2]}, pitch: {or0[1]}, roll: {or0[0]}")
+
+                # Acquisizione (solo se il check di velocità è negativo)
+                if good_pose:
+                    depth_images, angles, poses = imageAcquisition(m, d, depth_images, angles, poses, plot)
             list.pop(0)
     return or0, pos0, depth_images, angles, poses
