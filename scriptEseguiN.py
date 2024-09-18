@@ -8,6 +8,6 @@ def main(N, script):
 
 
 if __name__ == '__main__':
-    N = 3                                  # numero di esecuzioni
-    script = 'python muoviBandieraV3.py'           # script da eseguire N volte
+    N = 20                                  # numero di esecuzioni
+    script = 'python muoviBandieraV3.py'    # script da eseguire N volte
     main(N, script)

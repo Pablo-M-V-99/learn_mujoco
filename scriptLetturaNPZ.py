@@ -16,8 +16,3 @@ depth_images = data['depth_images']
 for k in range(np.shape(depth_images)[0]):
     plt.imshow(data['depth_images'][k])
     plt.show()
-
-
-
-
-

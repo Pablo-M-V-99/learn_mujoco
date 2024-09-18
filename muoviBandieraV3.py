@@ -22,12 +22,12 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     plot = False
 
     # Attivare il SEED
-    random.seed(seed)
+    # random.seed(seed)
 
     # Parametri TEMPO
-    t1 = 7          # durata movimento da un punto della griglia all'altro
-    tz = 7          # durata cambio piano
-    tr = 7          # durata rotazione
+    t1 = 10          # durata movimento da un punto della griglia all'altro
+    tz = 10          # durata cambio piano
+    tr = 10          # durata rotazione
     T = t1          # T è una variabile di appoggio per alternare tra il tempo di cambio piano e quello di traslazione
 
     # Parametri XML
@@ -39,7 +39,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     thickness = round(random.uniform(0.001, 0.004), 3)
     larghezza_ply = round(random.uniform(0.35, 0.80), 2)
     lunghezza_ply = round(random.uniform(0.70, 1), 2)
-    spacing = [round(random.uniform(0.01, 0.05), 2), round(random.uniform(0.01, 0.05), 2), 0.05]
+    spacing = [round(random.uniform(0.02, 0.05), 2), round(random.uniform(0.02, 0.05), 2), 0.05]
     pos = [0, 0, 0]
     dimension = [int(larghezza_ply / spacing[0]) + 1, int(lunghezza_ply / spacing[1]) + 1, 1]
     posizione_manoDx = round(random.uniform(0.5, 1), 3)
@@ -58,8 +58,8 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     pitch_step, yaw_step = 5, 5         # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
     # Calcolo numero di configurazioni
-    c_yaw = int(yaw_rot // yaw_step * 2 + 1)            # numero di configurazioni in Yaw per nodo
-    c_pitch = int(pitch_rot // pitch_step * 2 + 1)      # numero di configurazioni in Pitch per nodo
+    c_yaw = int(yaw_rot / yaw_step * 2 + 1)            # numero di configurazioni in Yaw per nodo
+    c_pitch = int(pitch_rot / pitch_step * 2 + 1)      # numero di configurazioni in Pitch per nodo
     c_nodi = height_G * wid_G * len_G                   # numero nodi
     c_tot = c_yaw * c_pitch * c_nodi                    # configurazioni totali
 
@@ -198,4 +198,4 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # print("Tutto BENE")
 
 if __name__ == '__main__':
-    main(0.2, 0.1, 0.5, 1000, 2, 10)
+    main(0.2, 0.1, 0.5, 1000, 2, 250)
