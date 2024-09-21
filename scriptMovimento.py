@@ -36,6 +36,7 @@ def moveToNext(m, d, viewer, pose0, nextPose, T, flag)-> bool:
     :param nextPose: posa al termine del movimento
     :param T: durata del movimento
     :param flag: stabilisce se il corpo ruota o trasla
+    :return: se True l'immagine verrà acquisita
     """
 
     t = 0
@@ -81,9 +82,9 @@ def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, next
     :param poses: vettore traslazione (da human a TCP)
     :param list: lista di tutte le configurazioni
     :param list_s: lista delle configurazioni da campionare
-    :return: se True l'immagine verrà acquisita
     """
 
+    good_pose = True
     for qq in range(-first_rot, first_rot + first_step, first_step):
         for q in range(-sec_rot, sec_rot + sec_step, sec_step):
             # yaw = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True).as_euler('xyz', degrees=True)[2]

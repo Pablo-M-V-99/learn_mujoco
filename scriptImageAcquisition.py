@@ -104,7 +104,7 @@ def imageAcquisition(m, d, depth_images, angles, poses, plot):
     if plot:
         _, ax = plt.subplots(ncols=2)
         ax[0].imshow(depth_frame)
-        ax[1].imshow(seg_frame[:, :, 0])
+        ax[1].imshow(seg_frame)
         plt.show()
 
     return depth_images, angles, poses

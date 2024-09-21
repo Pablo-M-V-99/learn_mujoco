@@ -5,6 +5,7 @@ import os
 import datetime
 import random
 import json
+from math import sin, radians
 from scipy.spatial.transform import Rotation as R
 from scriptSaveLabels import saveLabels, saveParameters
 from scriptGriglia import creazioneGriglia as cartesianGrid
@@ -22,7 +23,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     plot = False
 
     # Attivare il SEED
-    # random.seed(seed)
+    random.seed(seed)
 
     # Parametri TEMPO
     t1 = 5           # durata movimento da un punto della griglia all'altro
@@ -45,27 +46,37 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     posizione_manoDx = round(random.uniform(0.5, 1), 3)
     posizione_manoSx = round(random.uniform(0.5, 1), 3)
 
+    # Parametri ROTAZIONE
+    pitch_rot, yaw_rot = 20, 60         # Il yaw(60°) è la rotazione sul piano trasverso (Z) mentre il pitch(20°) la rotazione
+    pitch_step, yaw_step = 5, 5         # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
+
     # Parametri GRIGLIA
     wid_G = 0.3                         # larghezza griglia (X)
     len_G = 0.3                         # lunghezza grglia (Y)
     height_G = 0.3                      # altezza griglia (Z)
     dimCell = 0.1                            # distanza fra due nodi adiacenti
-    X_G = int(wid_G / dimCell + 1)           # numero di nodi lungo X
-    Y_G = int(len_G / dimCell +1)            # numero di nodi lungo Y
-    Z_G = int(height_G / dimCell + 1)        # numero di nodi lungo Z
-    offX, offY, offZ = -wid_G / 2, 10 - (dimension[1] - 1) * spacing[1] / 2, -height_G / 2    # offset per l'allineamento della griglia
-
-    # Parametri ROTAZIONE
-    pitch_rot, yaw_rot = 20, 60         # Il yaw è la rotazione sul piano trasverso (Z) mentre il pitch la rotazione
-    pitch_step, yaw_step = 5, 5         # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
-
+    X_G = round(wid_G / dimCell) + 1           # numero di nodi lungo X
+    Y_G = round(len_G / dimCell) + 1           # numero di nodi lungo Y
+    Z_G = round(height_G / dimCell) + 1        # numero di nodi lungo Z
+    # offsets per l'allineamento della griglia
+    offX = -wid_G / 2
+    offY = round(((dimension[0] - 1) * spacing[0] * sin(radians(yaw_rot)) - (dimension[1] - 1) * spacing[1]) / 2, 2)
+    offZ = -height_G / 2
     # Calcolo numero di configurazioni
-    c_yaw = int(yaw_rot / yaw_step * 2 + 1)            # numero di configurazioni in Yaw per nodo
-    c_pitch = int(pitch_rot / pitch_step * 2 + 1)      # numero di configurazioni in Pitch per nodo
-    c_nodi = Z_G * X_G * Y_G                           # numero nodi
-    c_tot = c_yaw * c_pitch * c_nodi                   # configurazioni totali
+    c_pitch = int(pitch_rot / pitch_step) * 2 + 1  # numero di configurazioni in Pitch per nodo
+    c_yaw = int(yaw_rot / yaw_step) * 2 + 1  # numero di configurazioni in Yaw per nodo
+    c_nodi = Z_G * X_G * Y_G  # numero nodi
+    c_tot = c_yaw * c_pitch * c_nodi  # configurazioni totali
     if c_tot < sampling:
-        return 'ERROR: il numero di pose da campionare è superiore al numero di pose totali'
+        sampling = c_tot
+        # print('ERROR: il numero di pose da campionare è superiore al numero di pose totali. Verranno campionate tutte '
+        #         'le pose')
+
+    # CREAZIONE GRIGLIA CARTESIANA
+    cartesianGrid(X_G, Y_G, Z_G, dimCell, offX, offY, offZ)
+    json_path = (f"griglia_{X_G}x{Y_G}x{Z_G}.json")
+    with open(json_path, "r") as file:
+        griglia = json.load(file)
 
     # GENERA LISTA CONFIGURAZIONI
     lista_configurazioni = [ii for ii in range(c_tot)]
@@ -87,12 +98,6 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     depth_images = []
     angles = []
     poses = []
-
-    # CREAZIONE GRIGLIA CARTESIANA
-    cartesianGrid(X_G, Y_G, Z_G, dimCell, offX, offY, offZ)
-    json_path = (f"griglia_{X_G}x{Y_G}x{Z_G}.json")
-    with open(json_path, "r") as file:
-        griglia = json.load(file)
 
     # Crezione XML
     xml_file = """
@@ -152,10 +157,8 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # MOVIMENTO SU TUTTA LA GRIGLIA
     while i <= X_G - 1 and j <= Y_G - 1 and k <= Z_G - 1 and len(lista_campionata) != 0:
 
-        # Allineamento con la griglia
-        # if i == 0 and j == 0 and k == 0:
-        #     moveToNext(m, d, viewer, pos0, nextPose, 10, 'TRANSLATE')
-        #     pos0 = nextPose
+        # Determinzazione del prossimo nodo verso cui traslare
+        nextPose = griglia[f"cella_{i}_{j}_{k}"]
 
         # Movimento (traslazione + rotazione)
         or0, pos0, depth_images, angles, poses = move(m, d, viewer, yaw_step, yaw_rot, pitch_step, pitch_rot, or0, pos0,
@@ -188,8 +191,6 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
                     j = 0
                     T = tz
 
-        # Determinzazione del prossimo nodo verso cui traslare
-        nextPose = griglia[f"cella_{i}_{j}_{k}"]
 
     # Genera il timestamp corrente
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -207,4 +208,4 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # print("Tutto BENE")
 
 if __name__ == '__main__':
-    main(0.2, 0.1, 0.5, 1000, 2, 3000)
+    main(0.2, 0.1, 0.5, 1000, 3, 3000)
