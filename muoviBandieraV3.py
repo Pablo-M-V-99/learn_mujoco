@@ -23,7 +23,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     plot = False
 
     # Attivare il SEED
-    random.seed(seed)
+    # random.seed(seed)
 
     # Parametri TEMPO
     t1 = 5           # durata movimento da un punto della griglia all'altro
