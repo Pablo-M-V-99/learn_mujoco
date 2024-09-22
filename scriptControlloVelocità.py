@@ -33,7 +33,7 @@ def speedCtrl(m, d, viewer, prevPose)-> bool:
             return True
 
         if counter > max_counter:
-            print(f"ERROR: max speed = {max_speed} > {speed_threshold}")
+            # print(f"ERROR: max speed = {max_speed} > {speed_threshold}")
             return False
 
 
