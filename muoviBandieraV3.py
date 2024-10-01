@@ -47,7 +47,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     posizione_manoSx = round(random.uniform(0.5, 1), 3)
 
     # Parametri ROTAZIONE
-    pitch_rot, yaw_rot = 20, 60         # Il yaw(60°) è la rotazione sul piano trasverso (Z) mentre il pitch(20°) la rotazione
+    pitch_rot, yaw_rot = 20, 30         # Il yaw(30°) è la rotazione sul piano trasverso (Z) mentre il pitch(20°) la rotazione
     pitch_step, yaw_step = 5, 5         # sul piano frontale (Y). Nessuna rotazione sul piano sagittale (X)
 
     # Parametri GRIGLIA
@@ -84,7 +84,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     ii = 0
     while ii < sampling:
         ii += 1
-        sample = random.randint(0, c_tot-1)
+        sample = random.randint(0, c_tot - 1)
         if sample not in lista_campionata:
             lista_campionata.append(sample)
         else:
@@ -136,6 +136,19 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     or0 = R.from_quat(np.array(d.mocap_quat[1]), scalar_first=True)
     or0 = or0.as_euler('xyz', degrees=True)
 
+    # Genera il timestamp corrente
+    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Crea la cartella con il timestamp
+    folder_name = f"datasets/dati_{current_time}"
+    os.makedirs(folder_name, exist_ok=True)  # Crea la cartella (exist_ok=True evita errori se esiste già)
+
+    # saveLabels(angles, poses, folder_name)
+    saveParameters(mass, radius, damping, poisson, young, thickness, spacing, dimension, posizione_manoDx,
+                   posizione_manoSx, folder_name)
+
+    print(f"Start time: {current_time}")
+
     if view:
         viewer = mujoco.viewer.launch_passive(m, d)
     else:
@@ -153,9 +166,13 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # Allineamento con la griglia
     moveToNext(m, d, viewer, pos0, nextPose, 10, 'TRANSLATE')
     pos0 = nextPose
+    counter = 0
 
     # MOVIMENTO SU TUTTA LA GRIGLIA
     while i <= X_G - 1 and j <= Y_G - 1 and k <= Z_G - 1 and len(lista_campionata) != 0:
+        counter += 1
+        if counter % 200 == 0:
+            print(counter)
 
         # Determinzazione del prossimo nodo verso cui traslare
         nextPose = griglia[f"cella_{i}_{j}_{k}"]
@@ -191,19 +208,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
                     j = 0
                     T = tz
 
-
-    # Genera il timestamp corrente
-    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Crea la cartella con il timestamp
-    folder_name = f"datasets/dati_{current_time}"
-    os.makedirs(folder_name, exist_ok=True)  # Crea la cartella (exist_ok=True evita errori se esiste già)
-
     np.savez(f"{folder_name}/depth_and_labels.npz", depth_images = depth_images, angles = angles, poses = poses)
-
-    # saveLabels(angles, poses, folder_name)
-    saveParameters(mass, radius, damping, poisson, young, thickness, spacing, dimension, posizione_manoDx,
-                   posizione_manoSx, folder_name)
 
     # print("Tutto BENE")
 

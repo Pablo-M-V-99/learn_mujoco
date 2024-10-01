@@ -171,3 +171,5 @@ cython_debug/
 /datasets/
 /griglia_3x3x3.json
 /griglia
+/griglia_3x2x2.json
+/griglia_4x4x4.json
