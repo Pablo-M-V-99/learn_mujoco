@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # Carica il file npz
 data = np.load('datasets/dati_20240921_182929/depth_and_labels.npz')
 
-# Visualizza le chiavi (nomi degli array salvati)ll
+# Visualizza le chiavi (nomi degli array salvati)
 print(data.files)
 
 poses = data['poses']

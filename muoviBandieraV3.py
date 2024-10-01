@@ -172,7 +172,7 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     while i <= X_G - 1 and j <= Y_G - 1 and k <= Z_G - 1 and len(lista_campionata) != 0:
         counter += 1
         if counter % 200 == 0:
-            print(counter)
+            print(f"{counter}")
 
         # Determinzazione del prossimo nodo verso cui traslare
         nextPose = griglia[f"cella_{i}_{j}_{k}"]
