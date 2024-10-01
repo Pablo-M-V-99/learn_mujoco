@@ -141,6 +141,8 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
 
     # Crea la cartella con il timestamp
     folder_name = f"datasets/dati_{current_time}"
+    # folder_name = f"/media/brahe/dataset_Pablo/dati_{current_time}"
+
     os.makedirs(folder_name, exist_ok=True)  # Crea la cartella (exist_ok=True evita errori se esiste già)
 
     # saveLabels(angles, poses, folder_name)
