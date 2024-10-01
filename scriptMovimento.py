@@ -94,6 +94,9 @@ def move(m, d, viewer, first_step, first_rot, sec_step, sec_rot, or0, pos0, next
             if list[0] in list_s:
                 list_s.remove(list[0])
 
+                if len(list_s) == 1000 or len(list_s) == 2000:
+                    print("1000 pose acquisite")
+
                 if not (np.array_equal(pos0, nextPose)):
                     good_pose = moveToNext(m, d, viewer, pos0, nextPose, T, 'TRANSLATE')
                     pos0 = nextPose

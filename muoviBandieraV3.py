@@ -147,7 +147,6 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     saveParameters(mass, radius, damping, poisson, young, thickness, spacing, dimension, posizione_manoDx,
                    posizione_manoSx, folder_name)
 
-    print(f"Start time: {current_time}")
 
     if view:
         viewer = mujoco.viewer.launch_passive(m, d)
@@ -166,13 +165,9 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     # Allineamento con la griglia
     moveToNext(m, d, viewer, pos0, nextPose, 10, 'TRANSLATE')
     pos0 = nextPose
-    counter = 0
 
     # MOVIMENTO SU TUTTA LA GRIGLIA
     while i <= X_G - 1 and j <= Y_G - 1 and k <= Z_G - 1 and len(lista_campionata) != 0:
-        counter += 1
-        if counter % 200 == 0:
-            print(f"{counter}")
 
         # Determinzazione del prossimo nodo verso cui traslare
         nextPose = griglia[f"cella_{i}_{j}_{k}"]
