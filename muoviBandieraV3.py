@@ -42,9 +42,10 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     lunghezza_ply = round(random.uniform(0.70, 1.2), 2)
     pos = [0, 0, 0]
     dimension = [0, 0, 1]
-    while dimension[0] * dimension[1] > 601 or dimension[0] * dimension[1] < 114:
+    while dimension[0] * dimension[1] < 311  or dimension[0] * dimension[1] > 421:
         spacing = [round(random.uniform(0.01, 0.04), 2), round(random.uniform(0.02, 0.05), 2), 0.05]
         dimension = [int(larghezza_ply / spacing[0]) + 1, int(lunghezza_ply / spacing[1]) + 1, 1]
+    print(f"{dimension[0] * dimension[1]} nodi")
     posizione_manoDx = round(random.uniform(0.5, 1), 3)
     posizione_manoSx = round(random.uniform(0.5, 1), 3)
 
