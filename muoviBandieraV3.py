@@ -40,10 +40,10 @@ def main(massa, smorzamento, mod_Poisson, mod_Young, seed, sampling):
     thickness = round(random.uniform(0.001, 0.004), 3)
     larghezza_ply = round(random.uniform(0.35, 0.80), 2)
     lunghezza_ply = round(random.uniform(0.70, 1.2), 2)
-    spacing = [round(random.uniform(0.01, 0.04 ), 2), round(random.uniform(0.02, 0.05), 2), 0.05]
     pos = [0, 0, 0]
     dimension = [0, 0, 1]
     while dimension[0] * dimension[1] > 601 or dimension[0] * dimension[1] < 114:
+        spacing = [round(random.uniform(0.01, 0.04), 2), round(random.uniform(0.02, 0.05), 2), 0.05]
         dimension = [int(larghezza_ply / spacing[0]) + 1, int(lunghezza_ply / spacing[1]) + 1, 1]
     posizione_manoDx = round(random.uniform(0.5, 1), 3)
     posizione_manoSx = round(random.uniform(0.5, 1), 3)
