@@ -144,8 +144,7 @@ train_dataset = DeformationDataset(
                                    max_translation_y=0,
                                    max_rotation=np.deg2rad(0),
                                    flip_left_right=True,
-                                   gradient_thresholding=True
-                                   )
+                                   gradient_thresholding=True)
 
 test_dataset = DeformationDataset(
                                   # datasets_path='datasets',
