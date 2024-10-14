@@ -136,7 +136,9 @@ accumulation_steps = batch_size // max_batch_size if batch_size > max_batch_size
 model = SiameseDenseNet(model_type=ModelType.classification).to(device)
 
 
-train_dataset = DeformationDataset(datasets_path='datasets',
+train_dataset = DeformationDataset(
+                                   # datasets_path='datasets',
+                                   datasets_path="/media/brahe/dataset_Pablo",
                                    training=True,
                                    max_translation_x=0,
                                    max_translation_y=0,
@@ -145,7 +147,9 @@ train_dataset = DeformationDataset(datasets_path='datasets',
                                    gradient_thresholding=True
                                    )
 
-test_dataset = DeformationDataset(datasets_path='datasets',
+test_dataset = DeformationDataset(
+                                  # datasets_path='datasets',
+                                  datasets_path="/media/brahe/dataset_Pablo",
                                   training=False)
 
 train_loader = DataLoader(dataset=train_dataset,

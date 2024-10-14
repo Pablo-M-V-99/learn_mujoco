@@ -8,7 +8,8 @@ import datetime
 
 # plot = True
 plot = False
-datasets_path = 'datasets'
+# datasets_path = 'datasets'
+datasets_path = "/media/brahe/dataset_Pablo"
 depth_imgs = []
 labels = []
 
@@ -21,7 +22,7 @@ bottom_side_mask[450:, :] = 0
 crop_size = [[90, 512], [45, 512 - 45]]
 # Genera il timestamp corrente
 current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
+print(f"{current_time}: Start")
 
 
 for folder_name in os.listdir(datasets_path):
@@ -56,6 +57,7 @@ for folder_name in os.listdir(datasets_path):
                     plt.show()
 
             np.savez(f"{folder_path}/PP_depth_and_labels.npz", depth_images = depth_raws, labels = labels)
+            current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             print(f"{current_time}: Completatato il preprocessing di {folder_path}")
 
 
