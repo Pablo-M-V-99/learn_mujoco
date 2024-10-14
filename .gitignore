@@ -159,7 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 /MUJOCO_LOG.TXT
-/prova.py
+/classificazione_DenseNet.py
 /provaDepth.py
 /grigliaRadiale.json
 /advancedRendering.py
