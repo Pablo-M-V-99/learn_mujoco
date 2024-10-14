@@ -58,7 +58,7 @@ class DeformationDataset(Dataset):
             if os.path.isdir(folder_path):
                 # file_path = os.path.join(folder_path, "depth_and_labels.npz")
                 file_path = os.path.join(folder_path, "PP_depth_and_labels.npz")
-                # Controlla se il file immagine_e_posa.npz esiste nella cartella
+                # Controlla se il file PP_depth_and_labels.npz esiste nella cartella
                 if os.path.exists(file_path):
                     # Carica il file .npz
                     data = np.load(file_path)
@@ -130,10 +130,10 @@ class DeformationDataset(Dataset):
                 if np.random.rand() > 0.5:
                     img1 = np.ascontiguousarray(np.fliplr(img1))
                     img2 = np.ascontiguousarray(np.fliplr(img2))
-# CONTROLLARE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    lab1[0] *= -1   # traslazione X ?
-                    lab1[4] *= -1   # rotazione Y ?
-                    lab1[5] *= -1   # rotazione Z ?
+
+                    lab1[0] *= -1   # traslazione X
+                    lab1[4] *= -1   # rotazione Y
+                    lab1[5] *= -1   # rotazione Z
 
                     lab2[0] *= -1
                     lab2[4] *= -1
@@ -150,8 +150,11 @@ class DeformationDataset(Dataset):
 
         img1 = torch.tensor(np.expand_dims(img1, axis=0), dtype=torch.float32)
         img2 = torch.tensor(np.expand_dims(img2, axis=0), dtype=torch.float32)
+
+        # rimozione di rotX
         lab1 = np.delete(lab1, [3])
         lab2 = np.delete(lab2, [3])
+
         delta_label = lab1 - lab2
 
         label = torch.tensor([np.digitize(d_label, bins=self.class_bins_trasl) for d_label in delta_label[:-2]] +
