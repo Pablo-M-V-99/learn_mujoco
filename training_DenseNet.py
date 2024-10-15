@@ -1,5 +1,6 @@
 import os
 import torch
+import datetime
 import numpy as np
 import torch.nn.functional as F
 import torch.optim as optim       # for the optimization algorithms
@@ -225,4 +226,5 @@ for epoch in range(max_epochs):
         running_validation_loss, validation_MSE, validation_MAE, validation_R2, validation_labels, validation_predictions = (
             validation_epoch(model, validation_loader, criterion, classification))
 
-    print(running_train_loss, running_validation_loss)
+    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    print(f"{current_time}: {running_train_loss}, {running_validation_loss}")

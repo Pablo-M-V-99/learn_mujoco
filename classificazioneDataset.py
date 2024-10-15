@@ -73,7 +73,6 @@ class DeformationDataset(Dataset):
                     self.datasets_size.append([idx0 , idx1])
                     idx0 = idx1 + 1
 
-
     # len returns the number of samples in the dataset
     def __len__(self):
         return self.datasets_size[len(self.datasets_size) - 1][1]
