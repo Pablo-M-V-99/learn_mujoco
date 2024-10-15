@@ -157,7 +157,7 @@ else:
 
 train_dataset = DeformationDataset(
                                    datasets_path='datasets',
-                                   # datasets_path="/media/brahe/dataset_Pablo",
+                                   # datasets_path="/media/brahe/dataset_Pablo/testing",
                                    training=True,
                                    classification=classification,
                                    max_translation_x=0,
@@ -168,7 +168,7 @@ train_dataset = DeformationDataset(
 
 validation_dataset = DeformationDataset(
                                   datasets_path='datasets',
-                                  # datasets_path="/media/brahe/dataset_Pablo",
+                                  # datasets_path="/media/brahe/dataset_Pablo/validation",
                                   training=False,
                                   classification=classification)
 
