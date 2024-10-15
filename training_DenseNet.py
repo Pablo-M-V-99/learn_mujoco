@@ -138,8 +138,8 @@ def validation_epoch(model, validation_dataloader, criterion, classification):
 # set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# classification = True
-classification = False
+classification = True
+# classification = False
 
 # Hyperparameters
 batch_size = 16
@@ -156,8 +156,8 @@ else:
     model = SiameseDenseNet(model_type=ModelType.regression).to(device)
 
 train_dataset = DeformationDataset(
-                                   datasets_path='datasets',
-                                   # datasets_path="/media/brahe/dataset_Pablo/testing",
+                                   # datasets_path='datasets',
+                                   datasets_path="/media/brahe/dataset_Pablo/training",
                                    training=True,
                                    classification=classification,
                                    max_translation_x=0,
@@ -167,8 +167,8 @@ train_dataset = DeformationDataset(
                                    gradient_thresholding=True)
 
 validation_dataset = DeformationDataset(
-                                  datasets_path='datasets',
-                                  # datasets_path="/media/brahe/dataset_Pablo/validation",
+                                  # datasets_path='datasets',
+                                  datasets_path="/media/brahe/dataset_Pablo/validation",
                                   training=False,
                                   classification=classification)
 
