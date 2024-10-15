@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 # Carica il file npz
-data = np.load('datasets/dati_20241012_174901/PP_depth_and_labels.npz')
+data = np.load('datasets/dati_20241012_175413/PP_depth_and_labels.npz')
 
 # Visualizza le chiavi (nomi degli array salvati)
 print(data.files)

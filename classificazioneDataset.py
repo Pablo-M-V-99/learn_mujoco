@@ -17,6 +17,7 @@ class DeformationDataset(Dataset):
     def __init__(self,
                  datasets_path: str,
                  training: bool,
+                 classification: bool,
                  max_translation_y: int = None,
                  max_translation_x: int = None,
                  max_rotation: float = None,
@@ -27,6 +28,7 @@ class DeformationDataset(Dataset):
         Arguments:
             datasets_path: path to the folder containing the images of a certain simulation
             training: if training is performed
+            classification: if we are going to perform classification or regression
             max_translation_y: maximum translation y [px]
             max_translation_x: maximum translation x [px]
             max_rotation: maximum rotation [degrees]
@@ -37,6 +39,7 @@ class DeformationDataset(Dataset):
         super().__init__()
         self.datasets_path = datasets_path
         self.training = training
+        self.classification = classification
         self.evaluation = False
         self.max_translation_y = max_translation_y
         self.max_translation_x = max_translation_x
@@ -73,11 +76,10 @@ class DeformationDataset(Dataset):
 
     # len returns the number of samples in the dataset
     def __len__(self):
-        return max(max(self.datasets_size))
+        return self.datasets_size[len(self.datasets_size) - 1][1]
 
     # getitem loads and returns a sample from the dataset at the given index
     def __getitem__(self, index):
-
 
         i = 0
         while True:
@@ -164,4 +166,10 @@ class DeformationDataset(Dataset):
         if self.evaluation:
             return img1, img2, label, delta_label
         else:
-            return img1, img2, label
+            if self.classification:
+                return img1, img2, label
+            else:
+                delta_label = torch.tensor(delta_label, dtype= torch.float32)
+                return img1, img2, delta_label
+
+

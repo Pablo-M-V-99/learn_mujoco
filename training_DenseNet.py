@@ -9,11 +9,10 @@ import torchvision.models as models
 from torchvision.models import DenseNet121_Weights
 from torch.utils.data import DataLoader         # easier dataset management, creates mini batches
 from classificazioneDataset import DeformationDataset
-from sklearn.metrics import recall_score, precision_score, accuracy_score
+from sklearn.metrics import (recall_score, precision_score, accuracy_score, mean_squared_error,
+                             mean_absolute_error, r2_score)
 from enum import Enum
 from typing import Union
-
-
 
 
 class ModelType(Enum):
@@ -63,7 +62,7 @@ class SiameseDenseNet(SiameseMultiHeadNetwork):
         features_extractor.features[0] = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
         if model_type == ModelType.classification:
-            classifiers = nn.ModuleList([nn.Sequential(nn.Dropout(p=0.25),
+            classification_layers = nn.ModuleList([nn.Sequential(nn.Dropout(p=0.25),
                                                        nn.Linear(features_extractor.classifier.in_features, 256),
                                                        nn.ReLU(),
                                                        nn.Dropout(p=0.25),
@@ -74,7 +73,7 @@ class SiameseDenseNet(SiameseMultiHeadNetwork):
             features_extractor.classifier = nn.Identity()
 
             super(SiameseDenseNet, self).__init__(features_extractor=features_extractor,
-                                                  output_layers=classifiers,
+                                                  output_layers=classification_layers,
                                                   model_type=model_type)
 
         if model_type == ModelType.regression:
@@ -90,66 +89,87 @@ class SiameseDenseNet(SiameseMultiHeadNetwork):
                                                   model_type=model_type)
 
 
-def test_epoch(model, test_dataloader, criterion):
-    running_test_loss = 0.0
+def validation_epoch(model, validation_dataloader, criterion, classification):
+    running_validation_loss = 0.0
     with torch.no_grad():
         model.eval()
-        test_labels = torch.tensor([])
-        classes_predicted = torch.tensor([], dtype=torch.int)
-        for batch_number, (img1, img2, labels) in enumerate(test_dataloader):
+        if classification:
+            classes_predicted = torch.tensor([], dtype=torch.int)
+        else:
+            validation_predictions = []
+        validation_labels = torch.tensor([])
+        for batch_number, (img1, img2, labels) in enumerate(validation_dataloader):
             img1 = img1.to(device)
             img2 = img2.to(device)
-            test_labels = torch.cat([test_labels, labels], dim=0)
-            labels = labels.to(device)
-
+            validation_labels = torch.cat([validation_labels, labels], dim=0)
+            labels = labels.to(device)      # true value
             # Forward pass
-            outputs = model(img1, img2)
-            # test_loss = criterion(outputs, labels)
-            test_loss = sum(criterion(outputs[:, i], labels[:, i]) for i in range(5))
-            running_test_loss += test_loss.item()
+            outputs = model(img1, img2)     # prediction
 
-            classes_predicted = torch.cat([classes_predicted, torch.argmax(outputs, dim=-1).cpu()], dim=0, )
+            if classification:
+                validation_loss = sum(criterion(outputs[:, i], labels[:, i]) for i in range(5))
+                classes_predicted = torch.cat([classes_predicted, torch.argmax(outputs, dim=-1).cpu()], dim=0, )
 
-        running_test_loss /= len(test_dataloader)
-        test_accuracy = [accuracy_score(test_labels[:, head], classes_predicted[:, head]) for head in
-                         range(outputs.shape[1])]
-        test_precision = [precision_score(test_labels[:, head], classes_predicted[:, head], average=None) for head in
-                          range(outputs.shape[1])]
-        test_recalls = [recall_score(test_labels[:, head], classes_predicted[:, head], average=None) for head in
-                        range(outputs.shape[1])]
+            else:
+                validation_loss = criterion(outputs, labels)
+                validation_predictions.append(outputs)
+            running_validation_loss += validation_loss.item()
 
-        return running_test_loss, test_accuracy, test_precision, test_recalls, test_labels, classes_predicted
+
+        running_validation_loss /= len(validation_dataloader)
+
+        if classification:
+            validation_accuracy = [accuracy_score(validation_labels[:, head], classes_predicted[:, head]) for head in
+                             range(outputs.shape[1])]
+            validation_precision = [precision_score(validation_labels[:, head], classes_predicted[:, head], average=None) for head
+                              in range(outputs.shape[1])]
+            validation_recalls = [recall_score(validation_labels[:, head], classes_predicted[:, head], average=None) for head in
+                            range(outputs.shape[1])]
+            return running_validation_loss, validation_accuracy, validation_precision, validation_recalls, validation_labels, classes_predicted
+        else:
+            validation_predictions = torch.cat(validation_predictions, dim=0)
+            validation_MSE = mean_squared_error(validation_labels.cpu(), validation_predictions.cpu())
+            validation_MAE = mean_absolute_error(validation_labels.cpu(), validation_predictions.cpu())
+            validation_R2 = r2_score(validation_labels.cpu(), validation_predictions.cpu())
+            return running_validation_loss, validation_MSE, validation_MAE, validation_R2, validation_labels, validation_predictions
 
 
 # set device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# classification = True
+classification = False
+
 # Hyperparameters
-batch_size = 2
+batch_size = 16
 max_epochs = 10
-max_epochs_no_improvement = 5
+max_epochs_no_improvement = 6
 learning_rate = 1e-3
-max_batch_size = 8
-test_batch_size = 128
+max_batch_size = 16
+validation_batch_size = 64
 accumulation_steps = batch_size // max_batch_size if batch_size > max_batch_size else 1
 
-model = SiameseDenseNet(model_type=ModelType.classification).to(device)
-
+if classification:
+    model = SiameseDenseNet(model_type=ModelType.classification).to(device)
+else:
+    model = SiameseDenseNet(model_type=ModelType.regression).to(device)
 
 train_dataset = DeformationDataset(
-                                   # datasets_path='datasets',
-                                   datasets_path="/media/brahe/dataset_Pablo",
+                                   datasets_path='datasets',
+                                   # datasets_path="/media/brahe/dataset_Pablo",
                                    training=True,
+                                   classification=classification,
                                    max_translation_x=0,
                                    max_translation_y=0,
                                    max_rotation=np.deg2rad(0),
                                    flip_left_right=True,
                                    gradient_thresholding=True)
 
-test_dataset = DeformationDataset(
-                                  # datasets_path='datasets',
-                                  datasets_path="/media/brahe/dataset_Pablo",
-                                  training=False)
+validation_dataset = DeformationDataset(
+                                  datasets_path='datasets',
+                                  # datasets_path="/media/brahe/dataset_Pablo",
+                                  training=False,
+                                  classification=classification)
 
 train_loader = DataLoader(dataset=train_dataset,
                           batch_size=batch_size,
@@ -157,13 +177,15 @@ train_loader = DataLoader(dataset=train_dataset,
                           drop_last=True,
                           num_workers=os.cpu_count() // 2)
 
-test_loader = DataLoader(dataset=test_dataset,
-                         batch_size=test_batch_size,
-                         shuffle=False,
-                         drop_last=False,
-                         num_workers=os.cpu_count() // 2)
-
-criterion = nn.CrossEntropyLoss()
+validation_loader = DataLoader(dataset=validation_dataset,
+                               batch_size=validation_batch_size,
+                               shuffle=False,
+                               drop_last=False,
+                               num_workers=os.cpu_count() // 2)
+if classification:
+    criterion = nn.CrossEntropyLoss()
+else:
+    criterion = nn.MSELoss()
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
 best_loss = torch.inf
 epochs_no_improvement = 0
@@ -178,11 +200,13 @@ for epoch in range(max_epochs):
     for batch_number, (img1, img2, labels) in enumerate(train_loader):
         img1 = img1.to(device)
         img2 = img2.to(device)
-        labels = labels.to(device)
+        labels = labels.to(device)      # etichetta 'corretta'
         # Forward pass
-        outputs = model(img1, img2)
-        # loss = criterion(outputs, labels)
-        loss = sum(criterion(outputs[:, i], labels[:, i]) for i in range(5)) / accumulation_steps
+        outputs = model(img1, img2)     # predizioni del modello
+        if classification:
+            loss = sum(criterion(outputs[:, i], labels[:, i]) for i in range(5)) / accumulation_steps
+        else:
+            loss = criterion(outputs, labels) / accumulation_steps
         loss.backward()
         if ((batch_number + 1) * max_batch_size) % batch_size == 0 or batch_size < max_batch_size:
             optimizer.step()
@@ -194,10 +218,11 @@ for epoch in range(max_epochs):
     running_train_loss /= len(train_loader)
     running_train_loss *= accumulation_steps
 
-    running_test_loss, test_accuracy, test_precision, test_recalls, test_labels, classes_predicted = (
-        test_epoch(model, test_loader, criterion))
+    if classification:
+        running_validation_loss, validation_accuracy, validation_precision, validation_recalls, validation_labels, classes_predicted = (
+            validation_epoch(model, validation_loader, criterion, classification))
+    else:
+        running_validation_loss, validation_MSE, validation_MAE, validation_R2, validation_labels, validation_predictions = (
+            validation_epoch(model, validation_loader, criterion, classification))
 
-    print(running_train_loss, running_test_loss)
-
-
-
+    print(running_train_loss, running_validation_loss)
