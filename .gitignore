@@ -159,7 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 /MUJOCO_LOG.TXT
-/training_DenseNet.py
+/training_classification_DenseNet.py
 /provaDepth.py
 /grigliaRadiale.json
 /advancedRendering.py
@@ -167,9 +167,13 @@ cython_debug/
 /ss01.stl
 /pulley_maker.py
 /syntehtic_dataset/
-/scripts/
+/scripts_Giorgio/
 /datasets/
 /griglia_3x3x3.json
 /griglia
 /griglia_3x2x2.json
 /griglia_4x4x4.json
+/scripts_Giorgio/
+/big_datasets/
+/provaWandb.py
+/wandb/

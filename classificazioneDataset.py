@@ -48,6 +48,7 @@ class DeformationDataset(Dataset):
         self.class_bins_trasl = np.array([-0.15, -0.049, 0.049, 0.15])
         self.class_bins_rot = np.array([-15, -4.9, 4.9, 15])
         self.deformation_classes = ['- Big', '- Small', 'None', '+ Small', '+ Big']
+        self.axis = 5
         self.depth_imgs = []
         self.labels = []
         self.datasets_size = []
