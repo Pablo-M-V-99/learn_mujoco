@@ -59,10 +59,7 @@ def model_evaluator(model, device,  validation_dataloader, criterion, classifica
             return running_validation_loss, validation_MSE, validation_MAE, validation_R2, validation_labels, validation_predictions
 
 
-# def objective(trial):
-
-
-def main(trial):
+def main():
     use_wandb = True
     # wandb.login()
     # set device
